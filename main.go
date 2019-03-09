@@ -47,11 +47,13 @@ func main() {
 			Port: portNum,
 		},
 	}
-	targetConn, _ := dialer.Dial("tcp", serviceAddr)
-	dialer.DialContext()
+	fmt.Println("serviceAddr: ", serviceAddr)
+	fmt.Println("serverAddr", "127.0.0.1:", portNum)
+	targetConn, err := dialer.Dial("tcp", serviceAddr)
+	utils.CheckError(err)
 
-	fmt.Fprintf(targetConn, utils.Concatenate("CONNECT ", name, "127.0.0.1 ", portNum, "\n"))
-
+	_, err = fmt.Fprintf(targetConn, utils.Concatenate("CONNECT ", name, "127.0.0.1 ", portNum, "\n"))
+	utils.CheckError(err)
 
 	for {
 		// will listen for message to process ending in newline (\n)
