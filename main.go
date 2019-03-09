@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	//"bufio"
 	"encoding/json"
 	"fmt"
 	"mp2/config"
@@ -38,31 +39,26 @@ func main() {
 
 	// listen on all interfaces
 
-	ln, _ := net.Listen("tcp", myAddr)
+
 	// accept connection on port
 
-	dialer := &net.Dialer{
-		LocalAddr: &net.TCPAddr{
-			IP:   net.ParseIP("127.0.0.1"),
-			Port: portNum,
-		},
-	}
+
 	fmt.Println("serviceAddr: ", serviceAddr)
-	fmt.Println("serverAddr", "127.0.0.1:", portNum)
-	targetConn, err := dialer.Dial("tcp", serviceAddr)
+	fmt.Println("serverAddr", myAddr)
+	targetConn, err := net.Dial("tcp", serviceAddr)
 	utils.CheckError(err)
 
-	_, err = fmt.Fprintf(targetConn, utils.Concatenate("CONNECT ", name, "127.0.0.1 ", portNum, "\n"))
+	_, err = fmt.Fprintf(targetConn, utils.Concatenate("CONNECT ", name, " 127.0.0.1 ", portNum, "\n"))
 	utils.CheckError(err)
+	//err = targetConn.Close()
+	//utils.CheckError(err)
 
 	for {
 		// will listen for message to process ending in newline (\n)
-		fmt.Println("herereer")
-		serverConn, err := ln.Accept()
-		utils.CheckError(err)
 
-		message, _ := bufio.NewReader(serverConn).ReadString('\n')
+		message, _ := bufio.NewReader(targetConn).ReadString('\n')
 		// output message received
 		fmt.Print("Message Received:", string(message), "\n")
 	}
+
 }

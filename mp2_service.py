@@ -20,7 +20,6 @@ async def handle_connection(reader, writer):
     connect_line = await reader.readline()
     addr = writer.get_extra_info('peername')
     print(f"Received connection from {addr}")
-
     m = re.match(r'CONNECT\s+(.*)$', connect_line.decode(), re.I)
     if not m:
         print(f"Incorrect connect line format from {addr}: `{connect_line.strip()}'")
@@ -29,6 +28,7 @@ async def handle_connection(reader, writer):
         node_line = m.group(1)
         num_intros = min(len(connections), 3)
         intros = random.sample(connections, num_intros)
+        print(intros)
         for intro in intros:
             writer.write(f"INTRODUCE {intro}\n".encode())
         await writer.drain()
