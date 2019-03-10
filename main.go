@@ -10,7 +10,9 @@ import (
 	"mp2/utils"
 	"net"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 )
 
@@ -51,6 +53,26 @@ func main() {
 
 	ServerConn, err := net.ListenUDP("udp", &net.UDPAddr{IP:[]byte{127,0,0,1},Port:portNum,Zone:""})
 	defer ServerConn.Close()
+
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		sig := <-sigs
+		fmt.Println()
+		fmt.Println(sig)
+
+		isConfirmed := utils.Ask4confirm()
+		if isConfirmed {
+			fmt.Println("confirmed")
+			myServer.Leave()
+			os.Exit(1)
+		} else {
+			fmt.Println("not confirmed")
+			os.Exit(0)
+		}
+
+	}()
 
 	go myServer.TalkWithServiceServer(targetConn)
 

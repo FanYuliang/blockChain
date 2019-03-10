@@ -118,3 +118,22 @@ func Arange(start, stop, step int) []int {
 	}
 	return rnge
 }
+
+//Reference: https://siongui.github.io/2016/04/23/go-read-yes-no-from-console/
+func Ask4confirm() bool {
+	var s string
+
+	fmt.Printf("do you wanna notify others?: ")
+	_, err := fmt.Scan(&s)
+	if err != nil {
+		panic(err)
+	}
+
+	s = strings.TrimSpace(s)
+	s = strings.ToLower(s)
+
+	if s == "y" || s == "yes" {
+		return true
+	}
+	return false
+}
