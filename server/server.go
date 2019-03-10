@@ -49,31 +49,18 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 		message, _ := bufio.NewReader(serviceConn).ReadString('\n')
 		message = strings.TrimSuffix(message, "\n")
 
-		fmt.Print("Message Received:", message, "\n")
+		//fmt.Print("Message Received:", message, "\n")
 
 		messageArr := strings.Split(message, " ")
 		messageType := messageArr[0]
 		if messageType == "INTRODUCE" {
 			//received a introduce message from service server
-			serverName := messageArr[1]
 			serverAddr := utils.Concatenate(messageArr[2], ":", messageArr[3])
-
-			newEntry := Entry{
-								Name: serverName,
-								IpAddress:serverAddr,
-								InitialTimeStamp:time.Now().Unix(),
-								Incarnation:0,
-								EntryType: 0,
-								lastUpdatedTime:-1}
-
-			s.MembershipList.AddNewNode(newEntry)
 			fmt.Println("introducer serverAddr: ", serverAddr)
 			s.Join(serverAddr)
 		} else if messageType == "TRANSACTION" {
 			//received a transaction message from service server
 		}
-		// output message received
-
 	}
 }
 
@@ -141,10 +128,10 @@ func (s *Server) Leave() {
 func (s *Server) MergeList(receivedRequest Action) {
 	log.Println("Start to merge list...")
 	for _, entry := range receivedRequest.Record {
-		if entry.InitialTimeStamp != s.InitialTimeStamp && entry.IpAddress != s.MyAddress {
+		if entry.IpAddress != s.MyAddress {
 			index := s.MembershipList.UpdateNode(entry)
 			if index != -1 {
-				if s.MyAddress == s.MembershipList.List[index].IpAddress && s.InitialTimeStamp == s.MembershipList.List[index].InitialTimeStamp {
+				if s.MyAddress == s.MembershipList.List[index].IpAddress {
 					//only process j can increase its own incarnation number
 					s.MembershipList.List[index].Incarnation += 1
 					s.MembershipList.List[index].EntryType = 0

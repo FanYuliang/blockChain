@@ -22,7 +22,7 @@ func (m *Membership) UpdateNode(entry Entry) int{
 		return -1
 	}
 	for i, elem := range m.List {
-		if elem.IpAddress == entry.IpAddress && elem.InitialTimeStamp == entry.InitialTimeStamp {
+		if elem.IpAddress == entry.IpAddress  {
 			if entry.EntryType == 1 {
 				return i
 			}
@@ -96,7 +96,7 @@ func (m *Membership) RemoveNode(ipAddress string, initialTimeStamp int64) {
 
 func (m *Membership) ContainsNode(entry Entry) bool {
 	for _, elem := range m.List {
-		if elem.IpAddress == entry.IpAddress && elem.InitialTimeStamp == entry.InitialTimeStamp {
+		if elem.IpAddress == entry.IpAddress && elem.Name == entry.Name {
 			return true
 		}
 	}

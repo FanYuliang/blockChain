@@ -41,14 +41,6 @@ func main() {
 
 	fmt.Println(utils.Concatenate("Launching server ", name, " at ", myAddr))
 
-	// listen on all interfaces
-
-
-	// accept connection on port
-
-
-	fmt.Println("serviceAddr: ", serviceAddr)
-	fmt.Println("serverAddr", myAddr)
 	targetConn, err := net.Dial("tcp", serviceAddr)
 	utils.CheckError(err)
 
