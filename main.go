@@ -1,16 +1,18 @@
 package main
 
 import (
-	"bufio"
 	//"bufio"
 	"encoding/json"
 	"fmt"
 	"mp2/config"
+	"mp2/server"
 	"mp2/utils"
 	"net"
 	"os"
 	"strconv"
+	"time"
 )
+
 
 
 func main() {
@@ -30,12 +32,14 @@ func main() {
 	err = decoder.Decode(&myConfig)
 	utils.CheckError(err)
 
+
 	serviceAddr := utils.Concatenate(myConfig.ServiceIP, ":", myConfig.ServicePort)
 	myAddr := utils.Concatenate("127.0.0.1", ":", portNum)
 
 
 
-	fmt.Println(utils.Concatenate("Launching server ", name, " at ", "127.0.0.1:", portNum))
+	myServer := server.Server{name, myAddr}
+	fmt.Println(utils.Concatenate("Launching server ", name, " at ", myAddr))
 
 	// listen on all interfaces
 
@@ -50,15 +54,11 @@ func main() {
 
 	_, err = fmt.Fprintf(targetConn, utils.Concatenate("CONNECT ", name, " 127.0.0.1 ", portNum, "\n"))
 	utils.CheckError(err)
-	//err = targetConn.Close()
-	//utils.CheckError(err)
+
+	go myServer.TalkWithServiceServer(targetConn)
 
 	for {
-		// will listen for message to process ending in newline (\n)
-
-		message, _ := bufio.NewReader(targetConn).ReadString('\n')
-		// output message received
-		fmt.Print("Message Received:", string(message), "\n")
+		time.Sleep(1)
 	}
 
 }
