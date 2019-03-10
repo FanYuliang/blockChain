@@ -1,14 +1,15 @@
 package utils
 
-
 import (
-"fmt"
-"log"
-"net"
-"os"
+	"fmt"
+	"log"
+	"math/rand"
+	"net"
+	"os"
 	"runtime"
 	"strconv"
-"strings"
+	"strings"
+	"time"
 )
 
 func SetupLog(name string) {
@@ -94,4 +95,26 @@ func CheckError(err error) {
 		log.Printf("[error] %s:%d %v", fn, line, err)
 		os.Exit(1)
 	}
+}
+
+
+func Shuffle(vals []int) []int {
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+	ret := make([]int, len(vals))
+	perm := r.Perm(len(vals))
+	for i, randIndex := range perm {
+		ret[i] = vals[randIndex]
+	}
+	return ret
+}
+
+func Arange(start, stop, step int) []int {
+	N := (stop - start) / step
+	rnge := make([]int, N, N)
+	i := 0
+	for x := start; x < stop; x += step {
+		rnge[i] = x;
+		i += 1
+	}
+	return rnge
 }

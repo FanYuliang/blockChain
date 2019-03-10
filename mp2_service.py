@@ -28,7 +28,6 @@ async def handle_connection(reader, writer):
         node_line = m.group(1)
         num_intros = min(len(connections), 3)
         intros = random.sample(connections, num_intros)
-        print("intros: ", intros)
         for intro in intros:
             writer.write(f"INTRODUCE {intro}\n".encode())
         await writer.drain()

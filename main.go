@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"time"
 )
 
 
@@ -53,17 +54,17 @@ func main() {
 
 	go myServer.TalkWithServiceServer(targetConn)
 
-	//go myServer.StartPing(1 * time.Second)
+	go myServer.StartPing(1 * time.Second)
 
 	//wait for incoming response
-	buf := make([]byte, 1024)
+	buf := make([]byte, 1024*1024)
 
 	for {
 		n, _ := ServerConn.Read(buf)
 		var resultMap server.Action
 		// parse resultMap to json format
-		json.Unmarshal(buf[0:n], &resultMap)
-
+		err = json.Unmarshal(buf[0:n], &resultMap)
+		utils.CheckError(err)
 		//Customize different action
 		if resultMap.ActionType == 0 {
 			//received join
@@ -71,16 +72,14 @@ func main() {
 			log.Println("Data received:", resultMap.Record)
 			log.Println("server's membership list: ", myServer.MembershipList.List)
 			myServer.MergeList(resultMap)
-			log.Println("After merging, server's membership list", myServer.MembershipList.List)
-			myServer.Ack(resultMap.IpAddress)
+			myServer.Ack(resultMap.IpAddress, true)
 		} else if resultMap.ActionType == 1 {
 			//received ping
 			log.Println("Received Ping from ", resultMap.IpAddress)
 			log.Println("Data received:", resultMap.Record)
 			log.Println("server's membership list: ", myServer.MembershipList.List)
 			myServer.MergeList(resultMap)
-			log.Println("After merging, server's membership list", myServer.MembershipList.List)
-			myServer.Ack(resultMap.IpAddress)
+			myServer.Ack(resultMap.IpAddress, false)
 		} else if resultMap.ActionType == 2 {
 			//received ack
 			log.Println("Received Ack from ", resultMap.IpAddress)
@@ -101,7 +100,7 @@ func main() {
 			//received leave
 			//s.MembershipList.RemoveNode(incomingIP)
 			myServer.MergeList(resultMap)
-			log.Println("After merging, server's membership list", myServer.MembershipList.List)
+
 		}
 
 	}

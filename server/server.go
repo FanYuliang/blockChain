@@ -17,11 +17,13 @@ type Server struct {
 	tSuspect 				int64
 	tFailure 				int64
 	tLeave 					int64
+	pingNum					int
 	IntroducerIpAddress 	string
 	MembershipList 			*Membership
 	MyAddress 				string
 	InitialTimeStamp 		int64
-	Transactions		  	map[string]string
+	Transactions		  	map[string]*Transaction
+
 }
 
 func (s * Server) Constructor(name string, introducerIP string, myIP string) {
@@ -32,8 +34,10 @@ func (s * Server) Constructor(name string, introducerIP string, myIP string) {
 	s.InitialTimeStamp = currTimeStamp
 	s.tDetection = 2
 	s.tSuspect = 3
+	s.Transactions = make(map[string]*Transaction)
 	s.tFailure = 3
 	s.tLeave = 3
+	s.pingNum = 5
 	var entry Entry
 	entry.lastUpdatedTime = 0
 	entry.EntryType = EncodeEntryType("alive")
@@ -60,6 +64,23 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 			s.Join(serverAddr)
 		} else if messageType == "TRANSACTION" {
 			//received a transaction message from service server
+			timeStamp, err := strconv.ParseFloat(messageArr[1], 64)
+			utils.CheckError(err)
+			transactionID := messageArr[2]
+			sNum, err := strconv.Atoi(messageArr[3])
+			utils.CheckError(err)
+			dNum, err := strconv.Atoi(messageArr[4])
+			utils.CheckError(err)
+			amount, err := strconv.Atoi(messageArr[5])
+			utils.CheckError(err)
+			newTransaction := new(Transaction)
+			newTransaction.Timestamp = timeStamp
+			newTransaction.ID = transactionID
+			newTransaction.sent = false
+			newTransaction.DNum = dNum
+			newTransaction.SNum = sNum
+			newTransaction.Amount = amount
+			s.Transactions[transactionID] = newTransaction
 		}
 	}
 }
@@ -87,7 +108,7 @@ func (s *Server) ping() {
 			continue
 		}
 		ipAddress := s.MembershipList.List[index].IpAddress
-		s.sendMessageWithUDP("Ping", ipAddress)
+		s.sendMessageWithUDP("Ping", ipAddress, false)
 		s.MembershipList.List[index].lastUpdatedTime = time.Now().Unix()
 	}
 	log.Println("server's membership list: ", s.MembershipList.List)
@@ -97,9 +118,9 @@ func (s *Server) ping() {
 /*
 	This function should reply to the ping from ipAddress, and disseminate its own disseminateList.
  */
-func (s *Server) Ack(ipAddress string) {
+func (s *Server) Ack(ipAddress string, sendAll bool) {
 	log.Println("Sending ack")
-	s.sendMessageWithUDP("Ack", ipAddress)
+	s.sendMessageWithUDP("Ack", ipAddress, sendAll)
 }
 
 
@@ -108,7 +129,7 @@ func (s *Server) Ack(ipAddress string) {
  */
 func (s *Server) Join(introducerIPAddress string) {
 	log.Println("Sending join request to ", introducerIPAddress)
-	s.sendMessageWithUDP("Join", introducerIPAddress)
+	s.sendMessageWithUDP("Join", introducerIPAddress, false)
 }
 
 /*
@@ -121,7 +142,7 @@ func (s *Server) Leave() {
 	//s.MembershipList.RemoveNode(s.MyAddress, s.InitialTimeStamp)
 	for _, index := range targetIndices {
 		ipAddress := s.MembershipList.List[index].IpAddress
-		s.sendMessageWithUDP("Leave", ipAddress)
+		s.sendMessageWithUDP("Leave", ipAddress, false)
 	}
 }
 
@@ -139,6 +160,14 @@ func (s *Server) MergeList(receivedRequest Action) {
 			}
 		}
 	}
+
+	for id, trans := range receivedRequest.Transactions {
+		s.Transactions[id] = &trans
+	}
+
+	log.Println("After merging, server's membership list", s.MembershipList.List)
+
+	log.Println("After merging, server's transaction list", s.Transactions)
 }
 
 func (s *Server) checkMembershipList() {
@@ -167,12 +196,14 @@ func (s *Server) checkMembershipList() {
 	}
 }
 
-func (s *Server) sendMessageWithUDP ( actionType string, ipAddress string) {
+func (s *Server) sendMessageWithUDP ( actionType string, ipAddress string, sendAll bool) {
 	fmt.Println("ipAddress: ", ipAddress)
 	arr := strings.Split(ipAddress, ":")
+
 	myPort, err := strconv.Atoi(arr[1])
 	utils.CheckError(err)
-	Conn, _ := net.DialUDP("udp", nil, &net.UDPAddr{IP:[]byte{127,0,0,1},Port:myPort,Zone:""})
+	Conn, err := net.DialUDP("udp", nil, &net.UDPAddr{IP:[]byte{127,0,0,1},Port:myPort,Zone:""})
+	utils.CheckError(err)
 	defer Conn.Close()
 	var listToSend []Entry
 	for _, v := range s.MembershipList.List {
@@ -180,29 +211,44 @@ func (s *Server) sendMessageWithUDP ( actionType string, ipAddress string) {
 		listToSend = append(listToSend, v)
 		//}
 	}
-	action := Action{EncodeActionType(actionType), listToSend, s.InitialTimeStamp, s.MyAddress}
+
+	transactionToSend := make(map[string]Transaction)
+
+	for k, v := range s.Transactions {
+		if sendAll || !s.Transactions[k].sent {
+			transactionToSend[k] = *v
+			s.Transactions[k].sent = true
+		}
+	}
+
+	action := Action{EncodeActionType(actionType), listToSend, s.InitialTimeStamp, s.MyAddress, transactionToSend}
 	fmt.Println("actionToSend: ", action)
-	Conn.Write(action.ToBytes())
+	_, err = Conn.Write(action.ToBytes())
+	utils.CheckError(err)
 }
 
 
 func (s *Server) getPingTargets() []int {
-	var res []int
-	currPointer := s.findSelfInMembershipList()
-	res = append(res, (currPointer + 1)%len(s.MembershipList.List), (currPointer - 1 + len(s.MembershipList.List))%len(s.MembershipList.List), (currPointer + 2)%len(s.MembershipList.List))
-	uniqueRes := unique(res)
-	for i, value := range uniqueRes {
-		if value == currPointer {
-			uniqueRes = append(uniqueRes[:i], uniqueRes[i+1:]...)
+
+	tempArr := utils.Arange(0,len(s.MembershipList.List), 1)
+	shuffledArr := utils.Shuffle(tempArr)
+	var res [] int
+
+	selfInd := s.findSelfInMembershipList()
+	for _, v := range shuffledArr {
+		if len(res) > s.pingNum {
 			break
 		}
+		if v != selfInd {
+			res = append(res, v)
+		}
 	}
-	return  uniqueRes
+	return res
 }
 
 func (s *Server) findSelfInMembershipList() int {
 	for ind, entry := range s.MembershipList.List {
-		if s.MyAddress == entry.IpAddress && s.InitialTimeStamp == entry.InitialTimeStamp {
+		if s.MyAddress == entry.IpAddress {
 			return ind
 		}
 	}

@@ -9,6 +9,7 @@ type Action struct {
 	Record []Entry
 	InitialTimeStamp int64
 	IpAddress string
+	Transactions map[string]Transaction
 }
 
 func (a *Action)  ToBytes() []byte {
