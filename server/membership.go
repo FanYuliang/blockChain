@@ -10,7 +10,7 @@ import (
 type Membership struct {
 	List           [] Entry
 	ListMutex      sync.Mutex
-	blacklist      [] Entry //failed server
+	Blacklist      [] Entry //failed server
 	BlacklistMutex sync.Mutex
 }
 
@@ -86,9 +86,6 @@ func (m *Membership) UpdateNode2(initialTimeStamp int64, ipAddress string, entry
 	Invoke when the server receives response from ping.  Update the membershipList
  */
 func (m *Membership) AddNewNode(entry Entry) {
-	//fmt.Println("addnewnode", m.List)
-	//fmt.Println(entry)
-
 	if m.ContainsNode(entry) {
 		panic("ip address is already in the list")
 	}
@@ -130,7 +127,7 @@ func (m *Membership) inBlacklist(entry Entry) bool {
 	m.BlacklistMutex.Lock()
 	defer m.BlacklistMutex.Unlock()
 
-	for _, elem := range m.blacklist {
+	for _, elem := range m.Blacklist {
 		if elem.IpAddress == entry.IpAddress && elem.InitialTimeStamp == entry.InitialTimeStamp {
 			return true
 		}
@@ -139,16 +136,10 @@ func (m *Membership) inBlacklist(entry Entry) bool {
 }
 
 func (m *Membership) AddToBlacklist(entry Entry) {
-	m.BlacklistMutex.Lock()
-	defer m.BlacklistMutex.Unlock()
 
 	if !m.inBlacklist(entry) {
-		m.blacklist = append(m.blacklist, entry)
+		m.BlacklistMutex.Lock()
+		m.Blacklist = append(m.Blacklist, entry)
+		m.BlacklistMutex.Unlock()
 	}
-}
-
-func (m *Membership) printBlackList() [] Entry {
-	m.BlacklistMutex.Lock()
-	defer m.BlacklistMutex.Unlock()
-	return m.blacklist
 }

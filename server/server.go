@@ -53,6 +53,7 @@ func (s * Server) Constructor(name string, introducerIP string, myIP string) {
 	s.tLeave = myConfig.LeaveTimeout
 	s.pingNum = myConfig.PingNum
 	var entry Entry
+	entry.Name = name
 	entry.lastUpdatedTime = 0
 	entry.EntryType = EncodeEntryType("alive")
 	entry.Incarnation = 0
@@ -135,8 +136,12 @@ func (s *Server) ping() {
 	}
 	s.MembershipList.ListMutex.Lock()
 	log.Println("server's membership list: ", s.MembershipList.List)
-	log.Println("server's blacklist: ", s.MembershipList.printBlackList())
 	s.MembershipList.ListMutex.Unlock()
+
+	s.MembershipList.BlacklistMutex.Lock()
+	log.Println("server's Blacklist: ", s.MembershipList.Blacklist)
+	s.MembershipList.BlacklistMutex.Unlock()
+
 }
 
 /*
@@ -197,7 +202,13 @@ func (s *Server) MergeList(receivedRequest Action) {
 	s.TransactionMutex.Unlock()
 
 	s.MembershipList.ListMutex.Lock()
-	log.Println("After merging, server's membership list", s.MembershipList.List)
+
+	var names []string
+	for _, v := range s.MembershipList.List {
+		names = append(names, v.Name)
+	}
+	log.Println("After merging, server's membership list: ", names)
+
 	s.MembershipList.ListMutex.Unlock()
 
 	//log.Println("After merging, server's transaction list", s.Transactions)
@@ -265,7 +276,7 @@ func (s *Server) sendMessageWithUDP (actionType string, ipAddress string, sendAl
 	s.TransactionMutex.Unlock()
 
 	action := Action{EncodeActionType(actionType), listToSend, s.InitialTimeStamp, s.MyAddress, transactionToSend}
-	fmt.Println("actionToSend: ", action)
+	//fmt.Println("actionToSend: ", action)
 	_, err = Conn.Write(action.ToBytes())
 	utils.CheckError(err)
 }

@@ -87,26 +87,23 @@ func main() {
 		// parse resultMap to json format
 		err = json.Unmarshal(buf[0:n], &resultMap)
 		utils.CheckError(err)
+
+		//log.Println("Data received:", resultMap.Record)
+
 		//Customize different action
 		if resultMap.ActionType == 0 {
 			//received join
 			log.Println("Received Join from ", resultMap.IpAddress)
-			log.Println("Data received:", resultMap.Record)
-			log.Println("server's membership list: ", myServer.MembershipList.List)
 			myServer.MergeList(resultMap)
 			myServer.Ack(resultMap.IpAddress, true)
 		} else if resultMap.ActionType == 1 {
 			//received ping
 			log.Println("Received Ping from ", resultMap.IpAddress)
-			log.Println("Data received:", resultMap.Record)
-			log.Println("server's membership list: ", myServer.MembershipList.List)
 			myServer.MergeList(resultMap)
 			myServer.Ack(resultMap.IpAddress, false)
 		} else if resultMap.ActionType == 2 {
 			//received ack
 			log.Println("Received Ack from ", resultMap.IpAddress)
-			log.Println("Data received:", resultMap.Record)
-			log.Println("server's membership list: ", myServer.MembershipList.List)
 			for _, entry := range myServer.MembershipList.List {
 				if entry.InitialTimeStamp == resultMap.InitialTimeStamp && entry.IpAddress == resultMap.IpAddress {
 					myServer.MembershipList.UpdateNode2(resultMap.InitialTimeStamp, resultMap.IpAddress, 0, 0)
@@ -114,17 +111,12 @@ func main() {
 				}
 			}
 			myServer.MergeList(resultMap)
-			log.Println("After merging, server's membership list", myServer.MembershipList.List)
+			//log.Println("After merging, server's membership list", myServer.MembershipList.List)
 		} else if resultMap.ActionType == 3 {
 			log.Println("Received Leave from ", resultMap.IpAddress)
-			log.Println("Data received:", resultMap.Record)
-			log.Println("server's membership list: ", myServer.MembershipList.List)
 			//received leave
 			//s.MembershipList.RemoveNode(incomingIP)
 			myServer.MergeList(resultMap)
-
 		}
-
 	}
-
 }
