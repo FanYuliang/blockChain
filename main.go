@@ -25,8 +25,8 @@ func main() {
 	}
 	//Parse input argument
 	name := os.Args[1]
-	portNum, _ := strconv.Atoi(os.Args[2])
-
+	portNum, err := strconv.Atoi(os.Args[2])
+	utils.CheckError(err)
 	file, err := os.Open("config/config.json")
 	utils.CheckError(err)
 	decoder := json.NewDecoder(file)
