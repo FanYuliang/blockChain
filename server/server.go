@@ -2,10 +2,13 @@ package server
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
+	"mp2/config"
 	"mp2/utils"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -17,6 +20,7 @@ type Server struct {
 	tSuspect 				int64
 	tFailure 				int64
 	tLeave 					int64
+	maxTransactionNum		int
 	pingNum					int
 	IntroducerIpAddress 	string
 	MembershipList 			*Membership
@@ -27,17 +31,26 @@ type Server struct {
 }
 
 func (s * Server) Constructor(name string, introducerIP string, myIP string) {
+
+	file, err := os.Open("config/config.json")
+	utils.CheckError(err)
+	decoder := json.NewDecoder(file)
+	myConfig := config.Configuration{}
+	err = decoder.Decode(&myConfig)
+	utils.CheckError(err)
+
 	currTimeStamp := time.Now().Unix()
 	s.MembershipList = new(Membership)
 	s.MyAddress = myIP
 	s.IntroducerIpAddress = introducerIP
 	s.InitialTimeStamp = currTimeStamp
-	s.tDetection = 2
-	s.tSuspect = 3
+	s.tDetection = myConfig.DetectionTimeout
+	s.tSuspect = myConfig.SuspiciousTimeout
+	s.maxTransactionNum = myConfig.MaxTransactionNum
 	s.Transactions = make(map[string]*Transaction)
-	s.tFailure = 3
-	s.tLeave = 3
-	s.pingNum = 5
+	s.tFailure = myConfig.FailureTimeout
+	s.tLeave = myConfig.LeaveTimeout
+	s.pingNum = myConfig.PingNum
 	var entry Entry
 	entry.lastUpdatedTime = 0
 	entry.EntryType = EncodeEntryType("alive")
@@ -167,7 +180,7 @@ func (s *Server) MergeList(receivedRequest Action) {
 
 	log.Println("After merging, server's membership list", s.MembershipList.List)
 
-	log.Println("After merging, server's transaction list", s.Transactions)
+	//log.Println("After merging, server's transaction list", s.Transactions)
 }
 
 func (s *Server) checkMembershipList() {
@@ -214,10 +227,15 @@ func (s *Server) sendMessageWithUDP ( actionType string, ipAddress string, sendA
 
 	transactionToSend := make(map[string]Transaction)
 
+
 	for k, v := range s.Transactions {
 		if sendAll || !s.Transactions[k].sent {
 			transactionToSend[k] = *v
 			s.Transactions[k].sent = true
+
+			if len(transactionToSend) > s.maxTransactionNum {
+				break
+			}
 		}
 	}
 
