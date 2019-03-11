@@ -10,5 +10,6 @@ type Configuration struct {
 	FailureTimeout		int64
 	LeaveTimeout		int64
 	PingNum				int
+	TransacCap			int
 
 }

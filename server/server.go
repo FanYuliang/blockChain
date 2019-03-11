@@ -23,6 +23,7 @@ type Server struct {
 	tLeave 					int64
 	maxTransactionNum		int
 	pingNum					int
+	TransacCap				int
 	IntroducerIpAddress 	string
 	MembershipList 			*Membership
 	MyAddress 				string
@@ -45,6 +46,7 @@ func (s * Server) Constructor(name string, introducerIP string, myIP string) {
 	s.MyAddress = myIP
 	s.IntroducerIpAddress = introducerIP
 	s.InitialTimeStamp = currTimeStamp
+	s.TransacCap = myConfig.TransacCap
 	s.tDetection = myConfig.DetectionTimeout
 	s.tSuspect = myConfig.SuspiciousTimeout
 	s.maxTransactionNum = myConfig.MaxTransactionNum
@@ -91,7 +93,6 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 			newTransaction := new(Transaction)
 			newTransaction.Timestamp = timeStamp
 			newTransaction.ID = transactionID
-			newTransaction.sent = false
 			newTransaction.DNum = dNum
 			newTransaction.SNum = sNum
 			newTransaction.Amount = amount
@@ -108,6 +109,7 @@ func (s *Server) StartPing(duration time.Duration) {
 		time.Sleep(duration)
 		s.ping()
 		s.checkMembershipList()
+		fmt.Println("Transaction count: ", len(s.Transactions))
 	}
 }
 
@@ -197,7 +199,11 @@ func (s *Server) MergeList(receivedRequest Action) {
 
 	s.TransactionMutex.Lock()
 	for id, trans := range receivedRequest.Transactions {
-		s.Transactions[id] = &trans
+		_, ok := s.Transactions[id]
+		if !ok {
+			s.Transactions[id] = &trans
+		}
+
 	}
 	s.TransactionMutex.Unlock()
 
@@ -261,20 +267,7 @@ func (s *Server) sendMessageWithUDP (actionType string, ipAddress string, sendAl
 	}
 	s.MembershipList.ListMutex.Unlock()
 
-	transactionToSend := make(map[string]Transaction)
-
-	s.TransactionMutex.Lock()
-	for k, v := range s.Transactions {
-		if sendAll || !s.Transactions[k].sent {
-			transactionToSend[k] = *v
-			s.Transactions[k].sent = true
-
-			if len(transactionToSend) > s.maxTransactionNum {
-				break
-			}
-		}
-	}
-	s.TransactionMutex.Unlock()
+	transactionToSend := s.getTransactSubset()
 
 	action := Action{EncodeActionType(actionType), listToSend, s.InitialTimeStamp, s.MyAddress, transactionToSend}
 	//fmt.Println("actionToSend: ", action)
@@ -282,6 +275,28 @@ func (s *Server) sendMessageWithUDP (actionType string, ipAddress string, sendAl
 	utils.CheckError(err)
 }
 
+
+func (s *Server) getTransactSubset() map[string] Transaction {
+	s.TransactionMutex.Lock()
+	defer s.TransactionMutex.Unlock()
+	var orig []string
+	for k, _ := range s.Transactions {
+		orig = append(orig, k)
+	}
+	tempArr := utils.Arange(0,len(s.Transactions), 1)
+	shuffledArr := utils.Shuffle(tempArr)
+
+
+	res := make(map[string] Transaction)
+
+	for _, v := range shuffledArr {
+		if len(res) > s.TransacCap {
+			break
+		}
+		res[orig[v]] = *s.Transactions[orig[v]]
+	}
+	return res
+}
 
 func (s *Server) getPingTargets() []int {
 

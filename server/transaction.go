@@ -6,5 +6,4 @@ type Transaction struct {
 	SNum      int
 	DNum      int
 	Amount    int
-	sent	  bool
 }

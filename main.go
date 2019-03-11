@@ -118,5 +118,6 @@ func main() {
 			//s.MembershipList.RemoveNode(incomingIP)
 			myServer.MergeList(resultMap)
 		}
+
 	}
 }
