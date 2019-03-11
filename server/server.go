@@ -230,8 +230,9 @@ func (s *Server) checkMembershipList() {
 			s.MembershipList.List[i].EntryType += 1
 			s.MembershipList.List[i].lastUpdatedTime = currTime
 		} else if entry.EntryType == 2 && currTime - entry.lastUpdatedTime >= s.tFailure && entry.lastUpdatedTime != 0 {
-			//failed now but passed failure timeout
+			fmt.Println("failed now but passed failure timeout")
 			s.MembershipList.List = append(s.MembershipList.List[:i], s.MembershipList.List[i+1:]...)
+			s.MembershipList.AddToBlacklist(entry)
 		} else if entry.EntryType == 2 && entry.lastUpdatedTime == 0 {
 			s.MembershipList.List = append(s.MembershipList.List[:i], s.MembershipList.List[i+1:]...)
 			s.MembershipList.AddToBlacklist(entry)
