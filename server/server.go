@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -27,7 +28,7 @@ type Server struct {
 	MyAddress 				string
 	InitialTimeStamp 		int64
 	Transactions		  	map[string]*Transaction
-
+	TransactionMutex		sync.Mutex
 }
 
 func (s * Server) Constructor(name string, introducerIP string, myIP string) {
@@ -93,7 +94,9 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 			newTransaction.DNum = dNum
 			newTransaction.SNum = sNum
 			newTransaction.Amount = amount
+			s.TransactionMutex.Lock()
 			s.Transactions[transactionID] = newTransaction
+			s.TransactionMutex.Unlock()
 		}
 	}
 }
@@ -103,7 +106,6 @@ func (s *Server) StartPing(duration time.Duration) {
 	for {
 		time.Sleep(duration)
 		s.ping()
-
 		s.checkMembershipList()
 	}
 }
@@ -117,15 +119,24 @@ func (s *Server) ping() {
 	//fmt.Println("targetIndices", targetIndices)
 
 	for _, index := range targetIndices {
+		s.MembershipList.ListMutex.Lock()
 		if s.MembershipList.List[index].lastUpdatedTime != 0 {
+			s.MembershipList.ListMutex.Unlock()
 			continue
 		}
 		ipAddress := s.MembershipList.List[index].IpAddress
+		s.MembershipList.ListMutex.Unlock()
+
 		s.sendMessageWithUDP("Ping", ipAddress, false)
+
+		s.MembershipList.ListMutex.Lock()
 		s.MembershipList.List[index].lastUpdatedTime = time.Now().Unix()
+		s.MembershipList.ListMutex.Unlock()
 	}
+	s.MembershipList.ListMutex.Lock()
 	log.Println("server's membership list: ", s.MembershipList.List)
 	log.Println("server's blacklist: ", s.MembershipList.printBlackList())
+	s.MembershipList.ListMutex.Unlock()
 }
 
 /*
@@ -153,8 +164,11 @@ func (s *Server) Leave() {
 	targetIndices := s.getPingTargets()
 	s.MembershipList.UpdateNode2(s.InitialTimeStamp, s.MyAddress, 3, 0)
 	//s.MembershipList.RemoveNode(s.MyAddress, s.InitialTimeStamp)
+
 	for _, index := range targetIndices {
+		s.MembershipList.ListMutex.Lock()
 		ipAddress := s.MembershipList.List[index].IpAddress
+		s.MembershipList.ListMutex.Unlock()
 		s.sendMessageWithUDP("Leave", ipAddress, false)
 	}
 }
@@ -165,25 +179,33 @@ func (s *Server) MergeList(receivedRequest Action) {
 		if entry.IpAddress != s.MyAddress {
 			index := s.MembershipList.UpdateNode(entry)
 			if index != -1 {
+				s.MembershipList.ListMutex.Lock()
 				if s.MyAddress == s.MembershipList.List[index].IpAddress {
 					//only process j can increase its own incarnation number
 					s.MembershipList.List[index].Incarnation += 1
 					s.MembershipList.List[index].EntryType = 0
 				}
+				s.MembershipList.ListMutex.Unlock()
 			}
 		}
 	}
 
+	s.TransactionMutex.Lock()
 	for id, trans := range receivedRequest.Transactions {
 		s.Transactions[id] = &trans
 	}
+	s.TransactionMutex.Unlock()
 
+	s.MembershipList.ListMutex.Lock()
 	log.Println("After merging, server's membership list", s.MembershipList.List)
+	s.MembershipList.ListMutex.Unlock()
 
 	//log.Println("After merging, server's transaction list", s.Transactions)
 }
 
 func (s *Server) checkMembershipList() {
+	s.MembershipList.ListMutex.Lock()
+	defer s.MembershipList.ListMutex.Unlock()
 	currTime := time.Now().Unix()
 	//check if any process is MembershipList or failed
 	for i:= len(s.MembershipList.List)-1; i>=0; i-- {
@@ -209,7 +231,7 @@ func (s *Server) checkMembershipList() {
 	}
 }
 
-func (s *Server) sendMessageWithUDP ( actionType string, ipAddress string, sendAll bool) {
+func (s *Server) sendMessageWithUDP (actionType string, ipAddress string, sendAll bool) {
 	fmt.Println("ipAddress: ", ipAddress)
 	arr := strings.Split(ipAddress, ":")
 
@@ -219,15 +241,17 @@ func (s *Server) sendMessageWithUDP ( actionType string, ipAddress string, sendA
 	utils.CheckError(err)
 	defer Conn.Close()
 	var listToSend []Entry
+	s.MembershipList.ListMutex.Lock()
 	for _, v := range s.MembershipList.List {
 		//if v.EntryType != 2 {
 		listToSend = append(listToSend, v)
 		//}
 	}
+	s.MembershipList.ListMutex.Unlock()
 
 	transactionToSend := make(map[string]Transaction)
 
-
+	s.TransactionMutex.Lock()
 	for k, v := range s.Transactions {
 		if sendAll || !s.Transactions[k].sent {
 			transactionToSend[k] = *v
@@ -238,6 +262,7 @@ func (s *Server) sendMessageWithUDP ( actionType string, ipAddress string, sendA
 			}
 		}
 	}
+	s.TransactionMutex.Unlock()
 
 	action := Action{EncodeActionType(actionType), listToSend, s.InitialTimeStamp, s.MyAddress, transactionToSend}
 	fmt.Println("actionToSend: ", action)
@@ -248,7 +273,9 @@ func (s *Server) sendMessageWithUDP ( actionType string, ipAddress string, sendA
 
 func (s *Server) getPingTargets() []int {
 
+	s.MembershipList.ListMutex.Lock()
 	tempArr := utils.Arange(0,len(s.MembershipList.List), 1)
+	s.MembershipList.ListMutex.Unlock()
 	shuffledArr := utils.Shuffle(tempArr)
 	var res [] int
 
@@ -265,6 +292,8 @@ func (s *Server) getPingTargets() []int {
 }
 
 func (s *Server) findSelfInMembershipList() int {
+	s.MembershipList.ListMutex.Lock()
+	defer s.MembershipList.ListMutex.Unlock()
 	for ind, entry := range s.MembershipList.List {
 		if s.MyAddress == entry.IpAddress {
 			return ind
@@ -272,16 +301,4 @@ func (s *Server) findSelfInMembershipList() int {
 	}
 	log.Fatalln("Fail to find self in membership list.")
 	return -1
-}
-
-func unique(intSlice []int) []int {
-	keys := make(map[int]bool)
-	var list []int
-	for _, entry := range intSlice {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			list = append(list, entry)
-		}
-	}
-	return list
 }
