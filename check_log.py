@@ -56,6 +56,12 @@ def calculate_avg_propagation_delay(total_transaction, nodes):
 		delay1, delay2 = calculate_propagation_speed_of_a_transaction(transactionID, total_transaction, nodes)
 		delays1.append(delay1)
 		delays2.append(delay2)
+		
+	print("delay1: ")
+	pprint.pprint(delays1)
+
+	print("delay2: ")
+	pprint.pprint(delays2)
 	return np.mean(np.array(delays1)), np.mean(np.array(delays2))
 
 failed_transactions = check_all_transaction_received_by_all_nodes(total_transaction, nodes)
