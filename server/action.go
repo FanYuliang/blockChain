@@ -24,7 +24,7 @@ func EncodeActionType(actionType string) int {
 		return 1
 	} else if actionType == "Ack" {
 		return 2
-	} else if actionType == "QUIT" {
+	} else if actionType == "QUITs" {
 		return 3
 	}
 	return -1

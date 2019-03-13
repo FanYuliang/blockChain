@@ -98,6 +98,7 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 			newTransaction.Amount = amount
 			s.TransactionMutex.Lock()
 			s.Transactions[transactionID] = newTransaction
+			log.Println(transactionID, time.Now().UnixNano())
 			s.TransactionMutex.Unlock()
 		} else if messageType == "DIE" {
 			//received a DIE message from service server
@@ -121,7 +122,7 @@ func (s *Server) StartPing(duration time.Duration) {
 	This function should ping to num processes. And at the same time, it should disseminate entries stored in the disseminateList
  */
 func (s *Server) ping() {
-	log.Println("Start to ping...")
+	fmt.Println("Start to ping...")
 	targetIndices := s.getPingTargets()
 	//fmt.Println("targetIndices", targetIndices)
 
@@ -141,11 +142,11 @@ func (s *Server) ping() {
 		s.MembershipList.ListMutex.Unlock()
 	}
 	s.MembershipList.ListMutex.Lock()
-	log.Println("server's membership list: ", s.MembershipList.List)
+	fmt.Println("server's membership list: ", s.MembershipList.List)
 	s.MembershipList.ListMutex.Unlock()
 
 	s.MembershipList.BlacklistMutex.Lock()
-	log.Println("server's Blacklist: ", s.MembershipList.Blacklist)
+	fmt.Println("server's Blacklist: ", s.MembershipList.Blacklist)
 	s.MembershipList.BlacklistMutex.Unlock()
 
 }
@@ -154,7 +155,7 @@ func (s *Server) ping() {
 	This function should reply to the ping from ipAddress, and disseminate its own disseminateList.
  */
 func (s *Server) Ack(ipAddress string, sendAll bool) {
-	log.Println("Sending ack")
+	fmt.Println("Sending ack")
 	s.sendMessageWithUDP("Ack", ipAddress, sendAll)
 }
 
@@ -163,7 +164,7 @@ func (s *Server) Ack(ipAddress string, sendAll bool) {
 	This function invoke when it attempts to connect with the introducer node. If success, it should update its membership list
  */
 func (s *Server) Join(introducerIPAddress string) {
-	log.Println("Sending join request to ", introducerIPAddress)
+	fmt.Println("Sending join request to ", introducerIPAddress)
 	s.sendMessageWithUDP("Join", introducerIPAddress, false)
 }
 
@@ -171,7 +172,7 @@ func (s *Server) Join(introducerIPAddress string) {
 	This function invoke when it quits the group
  */
 func (s *Server) Quit() {
-	log.Println("Sending QUIT request")
+	fmt.Println("Sending QUIT request")
 	targetIndices := s.getPingTargets()
 	s.MembershipList.UpdateNode2(s.InitialTimeStamp, s.MyAddress, 3, 0)
 	//s.MembershipList.RemoveNode(s.MyAddress, s.InitialTimeStamp)
@@ -185,7 +186,7 @@ func (s *Server) Quit() {
 }
 
 func (s *Server) MergeList(receivedRequest Action) {
-	log.Println("Start to merge list...")
+	fmt.Println("Start to merge list...")
 	for _, entry := range receivedRequest.Record {
 		if entry.IpAddress != s.MyAddress {
 			index := s.MembershipList.UpdateNode(entry)
@@ -205,6 +206,7 @@ func (s *Server) MergeList(receivedRequest Action) {
 	for id, trans := range receivedRequest.Transactions {
 		_, ok := s.Transactions[id]
 		if !ok {
+			log.Println(id, time.Now().UnixNano())
 			s.Transactions[id] = &trans
 		}
 
@@ -217,11 +219,9 @@ func (s *Server) MergeList(receivedRequest Action) {
 	for _, v := range s.MembershipList.List {
 		names = append(names, v.Name)
 	}
-	log.Println("After merging, server's membership list: ", names)
+	fmt.Println("After merging, server's membership list: ", names)
 
 	s.MembershipList.ListMutex.Unlock()
-
-	//log.Println("After merging, server's transaction list", s.Transactions)
 }
 
 func (s *Server) checkMembershipList() {
@@ -330,6 +330,7 @@ func (s *Server) findSelfInMembershipList() int {
 			return ind
 		}
 	}
-	log.Fatalln("Fail to find self in membership list.")
+
+	fmt.Println("Fail to find self in membership list.")
 	return -1
 }

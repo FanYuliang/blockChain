@@ -4,7 +4,6 @@ import (
 	//"bufio"
 	"encoding/json"
 	"fmt"
-	"log"
 	"mp2/config"
 	"mp2/server"
 	"mp2/utils"
@@ -23,6 +22,7 @@ func main() {
 		fmt.Print("Usage: go run main.go [server name] [port] \n")
 		return
 	}
+
 	//Parse input argument
 	name := os.Args[1]
 	portNum, err := strconv.Atoi(os.Args[2])
@@ -34,6 +34,8 @@ func main() {
 	err = decoder.Decode(&myConfig)
 	utils.CheckError(err)
 
+	f := utils.SetupLog(name)
+	defer f.Close()
 
 	serviceAddr := utils.Concatenate(myConfig.ServiceIP, ":", myConfig.ServicePort)
 	myAddr := utils.Concatenate("127.0.0.1", ":", portNum)
@@ -84,17 +86,17 @@ func main() {
 		//Customize different action
 		if resultMap.ActionType == 0 {
 			//received join
-			log.Println("Received Join from ", resultMap.IpAddress)
+			fmt.Println("Received Join from ", resultMap.IpAddress)
 			myServer.MergeList(resultMap)
 			myServer.Ack(resultMap.IpAddress, true)
 		} else if resultMap.ActionType == 1 {
 			//received ping
-			log.Println("Received Ping from ", resultMap.IpAddress)
+			fmt.Println("Received Ping from ", resultMap.IpAddress)
 			myServer.MergeList(resultMap)
 			myServer.Ack(resultMap.IpAddress, false)
 		} else if resultMap.ActionType == 2 {
 			//received ack
-			log.Println("Received Ack from ", resultMap.IpAddress)
+			fmt.Println("Received Ack from ", resultMap.IpAddress)
 			for _, entry := range myServer.MembershipList.List {
 				if entry.InitialTimeStamp == resultMap.InitialTimeStamp && entry.IpAddress == resultMap.IpAddress {
 					myServer.MembershipList.UpdateNode2(resultMap.InitialTimeStamp, resultMap.IpAddress, 0, 0)
@@ -104,7 +106,7 @@ func main() {
 			myServer.MergeList(resultMap)
 			//log.Println("After merging, server's membership list", myServer.MembershipList.List)
 		} else if resultMap.ActionType == 3 {
-			log.Println("Received QUIT from ", resultMap.IpAddress)
+			fmt.Println("Received QUIT from ", resultMap.IpAddress)
 			//received leave
 			//s.MembershipList.RemoveNode(incomingIP)
 			myServer.MergeList(resultMap)
