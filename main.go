@@ -20,7 +20,7 @@ import (
 
 func main() {
 	if len(os.Args) != 3 {
-		fmt.Print("Usage: go run main.go [server name] [port] n. \n")
+		fmt.Print("Usage: go run main.go [server name] [port] \n")
 		return
 	}
 	//Parse input argument

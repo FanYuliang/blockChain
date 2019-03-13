@@ -99,6 +99,10 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 			s.TransactionMutex.Lock()
 			s.Transactions[transactionID] = newTransaction
 			s.TransactionMutex.Unlock()
+		} else if messageType == "DIE" {
+			//received a DIE message from service server
+			fmt.Println("Received a DIE message from service server.")
+			os.Exit(2)
 		}
 	}
 }
