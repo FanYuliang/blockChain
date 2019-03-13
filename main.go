@@ -58,20 +58,11 @@ func main() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
-		sig := <-sigs
-		fmt.Println()
-		fmt.Println(sig)
+		_ = <-sigs
 
-		isConfirmed := utils.Ask4confirm()
-		if isConfirmed {
-			fmt.Println("confirmed")
-			myServer.Leave()
-			os.Exit(1)
-		} else {
-			fmt.Println("not confirmed")
-			os.Exit(0)
-		}
-
+		fmt.Println("Received signal from user, about to gracefully terminate the server")
+		myServer.Leave()
+		os.Exit(1)
 	}()
 
 	go myServer.TalkWithServiceServer(targetConn)
