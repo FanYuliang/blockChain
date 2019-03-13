@@ -168,10 +168,10 @@ func (s *Server) Join(introducerIPAddress string) {
 }
 
 /*
-	This function invoke when it leaves the group
+	This function invoke when it quits the group
  */
-func (s *Server) Leave() {
-	log.Println("Sending leave request")
+func (s *Server) Quit() {
+	log.Println("Sending QUIT request")
 	targetIndices := s.getPingTargets()
 	s.MembershipList.UpdateNode2(s.InitialTimeStamp, s.MyAddress, 3, 0)
 	//s.MembershipList.RemoveNode(s.MyAddress, s.InitialTimeStamp)
@@ -180,7 +180,7 @@ func (s *Server) Leave() {
 		s.MembershipList.ListMutex.Lock()
 		ipAddress := s.MembershipList.List[index].IpAddress
 		s.MembershipList.ListMutex.Unlock()
-		s.sendMessageWithUDP("Leave", ipAddress, false)
+		s.sendMessageWithUDP("QUIT", ipAddress, false)
 	}
 }
 

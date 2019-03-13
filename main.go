@@ -61,7 +61,7 @@ func main() {
 		_ = <-sigs
 
 		fmt.Println("Received signal from user, about to gracefully terminate the server")
-		myServer.Leave()
+		myServer.Quit()
 		os.Exit(1)
 	}()
 
@@ -104,7 +104,7 @@ func main() {
 			myServer.MergeList(resultMap)
 			//log.Println("After merging, server's membership list", myServer.MembershipList.List)
 		} else if resultMap.ActionType == 3 {
-			log.Println("Received Leave from ", resultMap.IpAddress)
+			log.Println("Received QUIT from ", resultMap.IpAddress)
 			//received leave
 			//s.MembershipList.RemoveNode(incomingIP)
 			myServer.MergeList(resultMap)
