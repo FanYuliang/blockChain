@@ -14,7 +14,7 @@ tx_rate = float(sys.argv[2])
 connections = []
 kill_connections = []
 snap_event = asyncio.Event()
-
+f = open('logs/total.txt', 'w+')
 
 async def handle_connection(reader, writer):
     connect_line = await reader.readline()
@@ -51,6 +51,7 @@ async def handle_connection(reader, writer):
                     tx_amount = random.randrange(2 ** 10)
                     tx = f"{tx_time:#.6f} {tx_id} {tx_from} {tx_to} {tx_amount}"
                     print(f"Sending transaction {tx} to {addr}")
+                    f.write(str(tx_id) +  " " + str(tx_time) + "\n")
                     writer.write(f"TRANSACTION {tx}\n".encode())
                     await writer.drain()
                 else:
@@ -104,5 +105,6 @@ except KeyboardInterrupt:
 
 # Close the server
 server.close()
+f.close()
 loop.run_until_complete(server.wait_closed())
 loop.close()
