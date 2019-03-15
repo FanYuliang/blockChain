@@ -47,21 +47,25 @@ def calculate_propagation_speed_of_a_transaction(transaction, total_transaction,
 	for node_name, node_map in nodes.items():
 		intervals.append(node_map[transaction] - start_time)
 	intervals.sort()
-	return intervals[int(len(intervals)/2)], intervals[-1]
+	return  intervals[0], intervals[int(len(intervals)/2)], intervals[-1]
 
 def calculate_avg_propagation_delay(total_transaction, nodes):
 	delays1 = []
 	delays2 = []
+	delays3 = []
 	for transactionID in total_transaction.keys():
-		delay1, delay2 = calculate_propagation_speed_of_a_transaction(transactionID, total_transaction, nodes)
+		delay3, delay1, delay2 = calculate_propagation_speed_of_a_transaction(transactionID, total_transaction, nodes)
 		delays1.append(delay1)
 		delays2.append(delay2)
-		
-	print("delay1: ")
+		delays3.append(delay3)
+	print("median of one transaction: ")
 	pprint.pprint(delays1)
 
-	print("delay2: ")
+	print("max of one transaction: ")
 	pprint.pprint(delays2)
+
+	print("min of one transaction: ")
+	pprint.pprint(delays3)
 	return np.mean(np.array(delays1)), np.mean(np.array(delays2))
 
 failed_transactions = check_all_transaction_received_by_all_nodes(total_transaction, nodes)
