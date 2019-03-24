@@ -94,3 +94,18 @@ func GetCurrentIP(debug bool, port int) string {
 		return Concatenate("127.0.0.1:", port)
 	}
 }
+func StringAddrToIntArr(addr string) []byte {
+	rawArr := strings.Split(addr, ":")
+	addrArr := strings.Split(rawArr[0], ".")
+	var res = [] byte {}
+
+	for _, i := range addrArr {
+		j, err := strconv.Atoi(i)
+		if err != nil {
+			panic(err)
+		}
+		res = append(res, byte(j))
+	}
+
+	return res
+}

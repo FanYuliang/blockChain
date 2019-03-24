@@ -44,12 +44,13 @@ func main() {
 
 	serviceAddr := utils.Concatenate(myConfig.ServiceIP, ":", myConfig.ServicePort)
 	myAddr := utils.GetCurrentIP(DEBUG, portNum)
-	fmt.Println("my address: ",myAddr)
+
 
 	myServer := new(server.Server)
 	myServer.Constructor(name, "",myAddr)
 
 	fmt.Println(utils.Concatenate("Launching server ", name, " at ", myAddr))
+
 
 	targetConn, err := net.Dial("tcp", serviceAddr)
 	utils.CheckError(err)
@@ -57,8 +58,8 @@ func main() {
 	_, err = fmt.Fprintf(targetConn, utils.Concatenate("CONNECT ", name, myAddr, "\n"))
 	utils.CheckError(err)
 
-
-	ServerConn, err := net.ListenUDP("udp", &net.UDPAddr{IP:[]byte{127,0,0,1},Port:portNum,Zone:""})
+	iparr := utils.StringAddrToIntArr(myAddr)
+	ServerConn, err := net.ListenUDP("udp", &net.UDPAddr{IP:iparr,Port:portNum,Zone:""})
 	defer ServerConn.Close()
 
 
