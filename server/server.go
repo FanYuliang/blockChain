@@ -262,7 +262,6 @@ func (s *Server) sendMessageWithUDP(actionType string, ipAddress string, sendAll
 	utils.CheckError(err)
 	defer Conn.Close()
 	listToSend := s.getMemebershipSubset(int(float32(len(s.MembershipList.List))*0.5))
-
 	transactionToSend := s.getTransactSubset()
 
 	action := Action{EncodeActionType(actionType), listToSend, s.InitialTimeStamp, s.MyAddress, transactionToSend}
