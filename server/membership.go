@@ -67,12 +67,12 @@ func (m *Membership) SortMembership(){
 		return  key1<key2
 	})
 }
-func (m *Membership) UpdateNode2(initialTimeStamp int64, ipAddress string, entryType int, lastUpdatedTime int64) {
+func (m *Membership) UpdateNode2(ipAddress string, entryType int, lastUpdatedTime int64) {
 	m.ListMutex.Lock()
 	defer m.ListMutex.Unlock()
 
 	for i, elem := range m.List {
-		if elem.IpAddress == ipAddress && elem.InitialTimeStamp == initialTimeStamp {
+		if elem.IpAddress == ipAddress {
 			m.List[i].EntryType = entryType
 			m.List[i].lastUpdatedTime = lastUpdatedTime
 			return
@@ -128,7 +128,7 @@ func (m *Membership) inBlacklist(entry Entry) bool {
 	defer m.BlacklistMutex.Unlock()
 
 	for _, elem := range m.Blacklist {
-		if elem.IpAddress == entry.IpAddress && elem.InitialTimeStamp == entry.InitialTimeStamp {
+		if elem.IpAddress == entry.IpAddress {
 			return true
 		}
 	}

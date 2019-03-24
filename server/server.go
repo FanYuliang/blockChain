@@ -175,7 +175,7 @@ func (s *Server) Join(introducerIPAddress string) {
 func (s *Server) Quit() {
 	fmt.Println("Sending QUIT request")
 	targetIndices := s.getPingTargets()
-	s.MembershipList.UpdateNode2(s.InitialTimeStamp, s.MyAddress, 3, 0)
+	s.MembershipList.UpdateNode2(s.MyAddress, 3, 0)
 	//s.MembershipList.RemoveNode(s.MyAddress, s.InitialTimeStamp)
 
 	for _, index := range targetIndices {
