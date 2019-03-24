@@ -17,7 +17,7 @@ def process_file(filename, is_total=False):
 			
 			if i == len(contents) - 1:
 				print("before:", " ".join(content))
-				if " ".join(content) != "CONTROL-C":
+				if content[2] != "CONTROL-C\n":
 					print("Somehow I died. ", filename)
 			else:
 				res[content[2]] = float(content[3])/1e9
