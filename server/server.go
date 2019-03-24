@@ -122,6 +122,11 @@ func (s *Server) ping() {
 	//fmt.Println("Start to ping...")
 	targetIndices := s.getPingTargets()
 	//fmt.Println("targetIndices", targetIndices)
+	suspicious_entry := s.MembershipList.GetSuspiciousEntry()
+	if len(suspicious_entry) != 0{
+		fmt.Println("suspicious entry = ",suspicious_entry)
+	}
+
 
 	for _, index := range targetIndices {
 		s.MembershipList.ListMutex.Lock()
@@ -143,15 +148,30 @@ func (s *Server) ping() {
 		//
 		/////////////////
 
+		if (suspicious_entry[ipAddress]==true){
+			delete(suspicious_entry,ipAddress)
+		}
+
 		s.sendMessageWithUDP("Ping", ipAddress, false)
 
 		s.MembershipList.ListMutex.Lock()
 		s.MembershipList.List[index].lastUpdatedTime = time.Now().Unix()
 		s.MembershipList.ListMutex.Unlock()
 	}
+	if len(suspicious_entry) != 0{
+		// give the suspicious entry last chance
+		for k,_ := range suspicious_entry{
+			fmt.Println("final confirm of suspicious entry", k)
+			s.sendMessageWithUDP("Ping", k, false)
+		}
+	}
 
 	s.MembershipList.BlacklistMutex.Lock()
-	fmt.Println("server's Blacklist: ", s.MembershipList.Blacklist)
+	if len(s.MembershipList.Blacklist) > 0 {
+		fmt.Println("server's Blacklist: ", s.MembershipList.Blacklist)
+		os.Exit(9)
+	}
+
 	s.MembershipList.BlacklistMutex.Unlock()
 
 	var names []string
@@ -173,7 +193,7 @@ func (s *Server) Ack(ipAddress string, sendAll bool) {
 	This function invoke when it attempts to connect with the introducer node. If success, it should update its membership list
 */
 func (s *Server) Join(introducerIPAddress string) {
-	fmt.Println("Sending join request to ", introducerIPAddress)
+	//fmt.Println("Sending join request to ", introducerIPAddress)
 	s.sendMessageWithUDP("Join", introducerIPAddress, false)
 }
 
@@ -182,13 +202,12 @@ func (s *Server) Join(introducerIPAddress string) {
 */
 func (s *Server) Quit() {
 	//fmt.Println("Sending QUIT request")
-	targetIndices := s.getPingTargets()
 	s.MembershipList.UpdateNode2(s.MyAddress, 3, 0)
 	//s.MembershipList.RemoveNode(s.MyAddress, s.InitialTimeStamp)
 
-	for _, index := range targetIndices {
+	for _, entry := range s.MembershipList.List {
 		s.MembershipList.ListMutex.Lock()
-		ipAddress := s.MembershipList.List[index].IpAddress
+		ipAddress := entry.IpAddress
 		s.MembershipList.ListMutex.Unlock()
 		s.sendMessageWithUDP("QUIT", ipAddress, false)
 	}
@@ -262,9 +281,11 @@ func (s *Server) sendMessageWithUDP(actionType string, ipAddress string, sendAll
 	utils.CheckError(err)
 	defer Conn.Close()
 
+
 	listToSend := s.getMemebershipSubset(int(float32(len(s.MembershipList.List))*0.5))
 
-	num := int(float32(len(s.MembershipList.List))*0.5)
+	num := int(float32(len(s.MembershipList.List))*0.3)
+
 	if num < 1 {
 		num = 1
 	}

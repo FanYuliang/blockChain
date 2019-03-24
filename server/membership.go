@@ -143,3 +143,15 @@ func (m *Membership) AddToBlacklist(ipaddr string) {
 		m.BlacklistMutex.Unlock()
 	}
 }
+
+func (m* Membership) GetSuspiciousEntry()map [string]bool{
+	m.ListMutex.Lock()
+	defer  m.ListMutex.Unlock()
+	res := make(map[string]bool)
+	for _,elem := range m.List{
+		if elem.EntryType == 1{
+			res[elem.IpAddress] = true
+		}
+	}
+	return res
+}
