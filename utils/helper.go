@@ -72,3 +72,18 @@ func Arange(start, stop, step int) []int {
 	}
 	return rnge
 }
+
+func StringAddrToIntArr(addr string) []int {
+	addrArr := strings.Split(addr, ".")
+	var res = [] int {}
+
+	for _, i := range addrArr {
+		j, err := strconv.Atoi(i)
+		if err != nil {
+			panic(err)
+		}
+		res = append(res, j)
+	}
+
+	return res
+}
