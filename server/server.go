@@ -16,20 +16,19 @@ import (
 )
 
 type Server struct {
-	name 					string
-	tDetection 				int64
-	tSuspect 				int64
-	tFailure 				int64
-	tLeave 					int64
-	maxTransactionNum		int
-	pingNum					int
-	TransacCap				int
-	IntroducerIpAddress 	string
-	MembershipList 			*Membership
-	MyAddress 				string
-	InitialTimeStamp 		int64
-	Transactions		  	map[string]*Transaction
-	TransactionMutex		sync.Mutex
+	name                string
+	tDetection          int64
+	tSuspect            int64
+	tFailure            int64
+	tLeave              int64
+	pingNum             int
+	TransactionCap      int
+	IntroducerIpAddress string
+	MembershipList      *Membership
+	MyAddress           string
+	InitialTimeStamp    int64
+	Transactions        map[string]*Transaction
+	TransactionMutex    sync.Mutex
 }
 
 func (s * Server) Constructor(name string, introducerIP string, myIP string) {
@@ -46,10 +45,9 @@ func (s * Server) Constructor(name string, introducerIP string, myIP string) {
 	s.MyAddress = myIP
 	s.IntroducerIpAddress = introducerIP
 	s.InitialTimeStamp = currTimeStamp
-	s.TransacCap = myConfig.TransacCap
+	s.TransactionCap = myConfig.TransacCap
 	s.tDetection = myConfig.DetectionTimeout
 	s.tSuspect = myConfig.SuspiciousTimeout
-	s.maxTransactionNum = myConfig.MaxTransactionNum
 	s.Transactions = make(map[string]*Transaction)
 	s.tFailure = myConfig.FailureTimeout
 	s.tLeave = myConfig.LeaveTimeout
@@ -291,7 +289,7 @@ func (s *Server) getTransactSubset() map[string] Transaction {
 	res := make(map[string] Transaction)
 
 	for _, v := range shuffledArr {
-		if len(res) > s.TransacCap {
+		if len(res) > s.TransactionCap {
 			break
 		}
 		res[orig[v]] = *s.Transactions[orig[v]]
