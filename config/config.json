@@ -7,5 +7,6 @@
   "FailureTimeout": 3,
   "LeaveTimeout": 3,
   "PingNum": 5,
-  "TransacCap": 10
+  "TransacCap": 10,
+  "PingPeriod": 0.2
 }

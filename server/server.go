@@ -141,14 +141,17 @@ func (s *Server) ping() {
 		s.MembershipList.List[index].lastUpdatedTime = time.Now().Unix()
 		s.MembershipList.ListMutex.Unlock()
 	}
-	s.MembershipList.ListMutex.Lock()
-	fmt.Println("server's membership list: ", s.MembershipList.List)
-	s.MembershipList.ListMutex.Unlock()
 
 	s.MembershipList.BlacklistMutex.Lock()
 	fmt.Println("server's Blacklist: ", s.MembershipList.Blacklist)
 	s.MembershipList.BlacklistMutex.Unlock()
 
+
+	var names []string
+	for _, v := range s.MembershipList.List {
+		names = append(names, v.Name)
+	}
+	fmt.Println("server's membership list: ", names)
 }
 
 /*
@@ -214,12 +217,6 @@ func (s *Server) MergeList(receivedRequest Action) {
 	s.TransactionMutex.Unlock()
 
 	s.MembershipList.ListMutex.Lock()
-
-	var names []string
-	for _, v := range s.MembershipList.List {
-		names = append(names, v.Name)
-	}
-	fmt.Println("After merging, server's membership list: ", names)
 
 	s.MembershipList.ListMutex.Unlock()
 }

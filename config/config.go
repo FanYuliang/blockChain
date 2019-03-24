@@ -11,5 +11,5 @@ type Configuration struct {
 	LeaveTimeout		int64
 	PingNum				int
 	TransacCap			int
-
+	PingPeriod 			float64
 }

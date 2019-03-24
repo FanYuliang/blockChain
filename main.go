@@ -68,8 +68,7 @@ func main() {
 	}()
 
 	go myServer.TalkWithServiceServer(targetConn)
-
-	go myServer.StartPing(1 * time.Second)
+	go myServer.StartPing(time.Duration(myConfig.PingPeriod) * time.Second)
 
 	//wait for incoming response
 	buf := make([]byte, 1024*1024)
