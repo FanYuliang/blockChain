@@ -12,14 +12,13 @@ def process_file(filename, is_total=False):
 		for content in contents:
 			res[content[0]] = float(content[1])
 	else:
+		isControlC = false
 		for i, content in enumerate(contents):
-			
-			
 			if i == len(contents) - 1:
-				print("before:", " ".join(content))
 				if content[2] != "CONTROL-C\n":
 					print("Somehow I died. ", filename)
 			else:
+				print(content, i, filename)
 				res[content[2]] = float(content[3])/1e9
 
 	return res
@@ -36,8 +35,9 @@ for filename in os.listdir("logs/"):
 
 
 def check_if_transaction_received(transaction_id, nodes):
-	for _, node_map in nodes.items():
+	for filename, node_map in nodes.items():
 		if transaction_id not in node_map:
+			print(transaction_id, filename, " is missing")
 			return False
 	return True
 
