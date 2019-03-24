@@ -7,7 +7,7 @@ type Entry struct {
 	IpAddress 			string
 	InitialTimeStamp 	int64
 	Incarnation 		int
-	EntryType 			int //0 for alive, 1 for suspected, 2 for failed, 3 for left
+	EntryType 			int //0 for alive, 1 for suspected, 2 for failed
 	lastUpdatedTime 	int64
 }
 

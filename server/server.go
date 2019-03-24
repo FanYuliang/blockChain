@@ -52,6 +52,7 @@ func (s * Server) Constructor(name string, introducerIP string, myIP string) {
 	s.tFailure = myConfig.FailureTimeout
 	s.tLeave = myConfig.LeaveTimeout
 	s.pingNum = myConfig.PingNum
+	s.name = name
 	var entry Entry
 	entry.Name = name
 	entry.lastUpdatedTime = 0
@@ -132,6 +133,17 @@ func (s *Server) ping() {
 		}
 		ipAddress := s.MembershipList.List[index].IpAddress
 		s.MembershipList.ListMutex.Unlock()
+
+		//TODO: to delete, for testing purpose
+		////////////////
+		//fmt.Println("I am ", s.name)
+		//fmt.Println("Target ipAddress: ", ipAddress)
+		//if s.name == "node4" && ipAddress == "127.0.0.1:6100" {
+		//	fmt.Println("SKIP!!!!!!!!!")
+		//	continue
+		//}
+		//
+		/////////////////
 
 		s.sendMessageWithUDP("Ping", ipAddress, false)
 

@@ -5,7 +5,7 @@
   "SuspiciousTimeout": 2,
   "FailureTimeout": 1,
   "LeaveTimeout": 5,
-  "PingNum": 5,
+  "PingNum": 50,
   "TransacCap": 10,
   "PingPeriod": 1
 }
