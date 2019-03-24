@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net"
 	"os"
 	"runtime"
 	"strconv"
@@ -71,4 +72,25 @@ func Arange(start, stop, step int) []int {
 		i += 1
 	}
 	return rnge
+}
+
+func GetCurrentIP(debug bool, port int) string {
+	if !debug {
+		addrs, err := net.InterfaceAddrs()
+		if err != nil {
+			os.Stderr.WriteString("Oops: " + err.Error() + "\n")
+			os.Exit(1)
+		}
+
+		for _, a := range addrs {
+			if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+				if ipnet.IP.To4() != nil {
+					return Concatenate(ipnet.IP.String(), ":", port)
+				}
+			}
+		}
+		return ""
+	} else {
+		return Concatenate("127.0.0.1:", port)
+	}
 }

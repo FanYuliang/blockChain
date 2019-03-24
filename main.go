@@ -25,6 +25,7 @@ func main() {
 	}
 
 	//Parse input argument
+	DEBUG := false
 	name := os.Args[1]
 	portNum, err := strconv.Atoi(os.Args[2])
 	utils.CheckError(err)
@@ -35,12 +36,15 @@ func main() {
 	err = decoder.Decode(&myConfig)
 	utils.CheckError(err)
 
+	if myConfig.ServiceIP == "127.0.0.1"{
+		DEBUG = true
+	}
 	f := utils.SetupLog(name)
 	defer f.Close()
 
 	serviceAddr := utils.Concatenate(myConfig.ServiceIP, ":", myConfig.ServicePort)
-	myAddr := utils.Concatenate("127.0.0.1", ":", portNum)
-
+	myAddr := utils.GetCurrentIP(DEBUG, portNum)
+	fmt.Println("my address: ",myAddr)
 
 	myServer := new(server.Server)
 	myServer.Constructor(name, "",myAddr)
@@ -50,7 +54,7 @@ func main() {
 	targetConn, err := net.Dial("tcp", serviceAddr)
 	utils.CheckError(err)
 
-	_, err = fmt.Fprintf(targetConn, utils.Concatenate("CONNECT ", name, " 127.0.0.1 ", portNum, "\n"))
+	_, err = fmt.Fprintf(targetConn, utils.Concatenate("CONNECT ", name, myAddr, "\n"))
 	utils.CheckError(err)
 
 
