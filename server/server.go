@@ -151,14 +151,18 @@ func (s *Server) ping() {
 	}
 
 	s.MembershipList.BlacklistMutex.Lock()
-	fmt.Println("server's Blacklist: ", s.MembershipList.Blacklist)
+	if len(s.MembershipList.Blacklist) > 0 {
+		fmt.Println("server's Blacklist: ", s.MembershipList.Blacklist)
+		os.Exit(9)
+	}
+
 	s.MembershipList.BlacklistMutex.Unlock()
 
 	var names []string
 	for _, v := range s.MembershipList.List {
 		names = append(names, v.Name)
 	}
-	fmt.Println("server's membership list: ", names)
+	//fmt.Println("server's membership list: ", names)
 }
 
 /*
@@ -173,7 +177,7 @@ func (s *Server) Ack(ipAddress string, sendAll bool) {
 	This function invoke when it attempts to connect with the introducer node. If success, it should update its membership list
 */
 func (s *Server) Join(introducerIPAddress string) {
-	fmt.Println("Sending join request to ", introducerIPAddress)
+	//fmt.Println("Sending join request to ", introducerIPAddress)
 	s.sendMessageWithUDP("Join", introducerIPAddress, false)
 }
 
@@ -182,13 +186,12 @@ func (s *Server) Join(introducerIPAddress string) {
 */
 func (s *Server) Quit() {
 	//fmt.Println("Sending QUIT request")
-	targetIndices := s.getPingTargets()
 	s.MembershipList.UpdateNode2(s.MyAddress, 3, 0)
 	//s.MembershipList.RemoveNode(s.MyAddress, s.InitialTimeStamp)
 
-	for _, index := range targetIndices {
+	for _, entry := range s.MembershipList.List {
 		s.MembershipList.ListMutex.Lock()
-		ipAddress := s.MembershipList.List[index].IpAddress
+		ipAddress := entry.IpAddress
 		s.MembershipList.ListMutex.Unlock()
 		s.sendMessageWithUDP("QUIT", ipAddress, false)
 	}
@@ -261,7 +264,7 @@ func (s *Server) sendMessageWithUDP(actionType string, ipAddress string, sendAll
 	Conn, err := net.DialUDP("udp", nil, &net.UDPAddr{IP: iparr, Port: myPort, Zone: ""})
 	utils.CheckError(err)
 	defer Conn.Close()
-	num := int(float32(len(s.MembershipList.List))*0.5)
+	num := int(float32(len(s.MembershipList.List))*0.3)
 	if num < 1 {
 		num = 1
 	}

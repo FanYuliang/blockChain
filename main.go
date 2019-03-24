@@ -92,7 +92,7 @@ func main() {
 		//Customize different action
 		if resultMap.ActionType == 0 {
 			//received join
-			fmt.Println("Received Join from ", resultMap.IpAddress)
+			//fmt.Println("Received Join from ", resultMap.IpAddress)
 			myServer.MergeList(resultMap)
 			myServer.Ack(resultMap.IpAddress, true)
 		} else if resultMap.ActionType == 1 {
