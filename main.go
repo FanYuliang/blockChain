@@ -46,11 +46,10 @@ func main() {
 	serviceAddr := utils.Concatenate(myConfig.ServiceIP, ":", myConfig.ServicePort)
 	myAddr := utils.GetCurrentIP(DEBUG, portNum)
 
-
 	myServer := new(server.Server)
 	myServer.Constructor(name, "",myAddr)
 
-	fmt.Println(utils.Concatenate("Launching server ", name, " at ", myAddr))
+	//fmt.Println(utils.Concatenate("Launching server ", name, " at ", myAddr))
 
 
 	targetConn, err := net.Dial("tcp", serviceAddr)
@@ -69,10 +68,10 @@ func main() {
 	go func() {
 		_ = <-sigs
 
-		fmt.Println("Received signal from user, about to gracefully terminate the server")
+		//fmt.Println("Received signal from user, about to gracefully terminate the server")
 		myServer.Quit()
 		log.Println("CONTROL-C")
-		os.Exit(1)
+		os.Exit(5)
 	}()
 
 	go myServer.TalkWithServiceServer(targetConn)
@@ -93,17 +92,17 @@ func main() {
 		//Customize different action
 		if resultMap.ActionType == 0 {
 			//received join
-			fmt.Println("Received Join from ", resultMap.IpAddress)
+			//fmt.Println("Received Join from ", resultMap.IpAddress)
 			myServer.MergeList(resultMap)
 			myServer.Ack(resultMap.IpAddress, true)
 		} else if resultMap.ActionType == 1 {
 			//received ping
-			fmt.Println("Received Ping from ", resultMap.IpAddress)
+			//fmt.Println("Received Ping from ", resultMap.IpAddress)
 			myServer.MergeList(resultMap)
 			myServer.Ack(resultMap.IpAddress, false)
 		} else if resultMap.ActionType == 2 {
 			//received ack
-			fmt.Println("Received Ack from ", resultMap.IpAddress)
+			//fmt.Println("Received Ack from ", resultMap.IpAddress)
 			for _, entry := range myServer.MembershipList.List {
 				if entry.InitialTimeStamp == resultMap.InitialTimeStamp && entry.IpAddress == resultMap.IpAddress {
 					myServer.MembershipList.UpdateNode2(resultMap.IpAddress, 0, 0)
@@ -113,7 +112,7 @@ func main() {
 			myServer.MergeList(resultMap)
 			//log.Println("After merging, server's membership list", myServer.MembershipList.List)
 		} else if resultMap.ActionType == 3 {
-			fmt.Println("Received QUIT from ", resultMap.IpAddress)
+			//fmt.Println("Received QUIT from ", resultMap.IpAddress)
 			//received leave
 			//s.MembershipList.RemoveNode(incomingIP)
 			myServer.MembershipList.AddToBlacklist(resultMap.IpAddress)

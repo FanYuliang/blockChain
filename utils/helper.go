@@ -47,8 +47,8 @@ func Concatenate(elem ...interface{}) string {
 func CheckError(err error) {
 	if err != nil {
 		_, fn, line, _ := runtime.Caller(1)
-		log.Printf("[error] %s:%d %v", fn, line, err)
-		os.Exit(1)
+		fmt.Printf("[error] %s:%d %v", fn, line, err)
+		os.Exit(7)
 	}
 }
 
@@ -79,7 +79,7 @@ func GetCurrentIP(debug bool, port int) string {
 		addrs, err := net.InterfaceAddrs()
 		if err != nil {
 			os.Stderr.WriteString("Oops: " + err.Error() + "\n")
-			os.Exit(1)
+			os.Exit(8)
 		}
 
 		for _, a := range addrs {
