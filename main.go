@@ -4,6 +4,7 @@ import (
 	//"bufio"
 	"encoding/json"
 	"fmt"
+	"log"
 	"mp2/config"
 	"mp2/server"
 	"mp2/utils"
@@ -64,6 +65,7 @@ func main() {
 
 		fmt.Println("Received signal from user, about to gracefully terminate the server")
 		myServer.Quit()
+		log.Println("CONTROL-C")
 		os.Exit(1)
 	}()
 

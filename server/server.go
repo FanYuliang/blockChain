@@ -20,7 +20,6 @@ type Server struct {
 	tDetection          int64
 	tSuspect            int64
 	tFailure            int64
-	tLeave              int64
 	pingNum             int
 	TransactionCap      int
 	IntroducerIpAddress string
@@ -50,7 +49,6 @@ func (s * Server) Constructor(name string, introducerIP string, myIP string) {
 	s.tSuspect = myConfig.SuspiciousTimeout
 	s.Transactions = make(map[string]*Transaction)
 	s.tFailure = myConfig.FailureTimeout
-	s.tLeave = myConfig.LeaveTimeout
 	s.pingNum = myConfig.PingNum
 	s.name = name
 	var entry Entry

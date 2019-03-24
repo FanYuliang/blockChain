@@ -12,8 +12,13 @@ def process_file(filename, is_total=False):
 		for content in contents:
 			res[content[0]] = float(content[1])
 	else:
-		for content in contents:
+		for i, content in enumerate(contents):
 			res[content[2]] = float(content[3])/1e9
+			
+			if i == len(contents) - 1:
+				if " ".join(content) != "CONTROL-C":
+					print("Somehow I died. ", filename)
+
 	return res
 
 total_transaction = {}
