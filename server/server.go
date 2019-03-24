@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"log"
 	"mp2/config"
 	"mp2/utils"
@@ -72,6 +73,7 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 		messageType := messageArr[0]
 		if messageType == "INTRODUCE" {
 			//received a introduce message from service server
+			fmt.Print("Message Received:", message, "\n")
 			serverAddr := utils.Concatenate(messageArr[2], ":", messageArr[3])
 			//fmt.Println("introducer serverAddr: ", serverAddr)
 			s.Join(serverAddr)
@@ -149,14 +151,14 @@ func (s *Server) ping() {
 	}
 
 	s.MembershipList.BlacklistMutex.Lock()
-	//fmt.Println("server's Blacklist: ", s.MembershipList.Blacklist)
+	fmt.Println("server's Blacklist: ", s.MembershipList.Blacklist)
 	s.MembershipList.BlacklistMutex.Unlock()
 
 	var names []string
 	for _, v := range s.MembershipList.List {
 		names = append(names, v.Name)
 	}
-	//fmt.Println("server's membership list: ", names)
+	fmt.Println("server's membership list: ", names)
 }
 
 /*
@@ -302,6 +304,7 @@ func (s *Server) getMemebershipSubset(subsetNum int) []Entry {
 		}
 		res = append(res, s.MembershipList.List[v])
 	}
+	fmt.Println(res)
 	return res
 }
 

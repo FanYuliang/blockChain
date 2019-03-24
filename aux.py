@@ -12,12 +12,12 @@ arr = []
 
 def signal_handler(sig,frame):
 	for i,elem in enumerate(arr):
-		elem.send_signal(signal.SIGKILL)
+		elem.send_signal(signal.SIGINT)
 		print("kill node %d",i)
 	sys.exit(1)
 
 for i in range(int(node_num)):
-	num = "node"+str(i)
+	num = "node"+str(int(vm_num)*10+i)
 	port = str(6000+i)
 	obj = subprocess.Popen(["go","run","main.go",num,port])
 	arr.append(obj)
