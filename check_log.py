@@ -12,7 +12,7 @@ def process_file(filename, is_total=False):
 		for content in contents:
 			res[content[0]] = float(content[1])
 	else:
-		isControlC = false
+		isControlC = False
 		for i, content in enumerate(contents):
 			if i == len(contents) - 1:
 				if content[2] != "CONTROL-C\n":
