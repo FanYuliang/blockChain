@@ -73,7 +73,7 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 		messageType := messageArr[0]
 		if messageType == "INTRODUCE" {
 			//received a introduce message from service server
-			fmt.Print("Message Received:", message, "\n")
+			//fmt.Print("Message Received:", message, "\n")
 			serverAddr := utils.Concatenate(messageArr[2], ":", messageArr[3])
 			//fmt.Println("introducer serverAddr: ", serverAddr)
 			s.Join(serverAddr)
@@ -173,7 +173,7 @@ func (s *Server) Ack(ipAddress string, sendAll bool) {
 	This function invoke when it attempts to connect with the introducer node. If success, it should update its membership list
 */
 func (s *Server) Join(introducerIPAddress string) {
-	//fmt.Println("Sending join request to ", introducerIPAddress)
+	fmt.Println("Sending join request to ", introducerIPAddress)
 	s.sendMessageWithUDP("Join", introducerIPAddress, false)
 }
 
@@ -261,8 +261,11 @@ func (s *Server) sendMessageWithUDP(actionType string, ipAddress string, sendAll
 	Conn, err := net.DialUDP("udp", nil, &net.UDPAddr{IP: iparr, Port: myPort, Zone: ""})
 	utils.CheckError(err)
 	defer Conn.Close()
-	listToSend := s.getMemebershipSubset(int(float32(len(s.MembershipList.List))*0.5))
-
+	num := int(float32(len(s.MembershipList.List))*0.5)
+	if num < 1 {
+		num = 1
+	}
+	listToSend := s.getMemebershipSubset(num)
 	transactionToSend := s.getTransactSubset()
 
 	action := Action{EncodeActionType(actionType), listToSend, s.InitialTimeStamp, s.MyAddress, transactionToSend}
@@ -304,7 +307,6 @@ func (s *Server) getMemebershipSubset(subsetNum int) []Entry {
 		}
 		res = append(res, s.MembershipList.List[v])
 	}
-	fmt.Println(res)
 	return res
 }
 
