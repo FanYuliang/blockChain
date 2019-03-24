@@ -16,6 +16,7 @@ def process_file(filename, is_total=False):
 			
 			
 			if i == len(contents) - 1:
+				print("before:", " ".join(content))
 				if " ".join(content) != "CONTROL-C":
 					print("Somehow I died. ", filename)
 			else:
