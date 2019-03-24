@@ -158,7 +158,7 @@ func (s *Server) ping() {
 	for _, v := range s.MembershipList.List {
 		names = append(names, v.Name)
 	}
-	fmt.Println("server's membership list: ", names)
+	//fmt.Println("server's membership list: ", names)
 }
 
 /*
@@ -268,7 +268,7 @@ func (s *Server) sendMessageWithUDP(actionType string, ipAddress string, sendAll
 	if num < 1 {
 		num = 1
 	}
-	listToSend := s.getMemebershipSubset(num)
+	listToSend = s.getMemebershipSubset(num)
 
 	transactionToSend := s.getTransactSubset()
 
