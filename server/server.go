@@ -237,7 +237,7 @@ func (s *Server) checkMembershipList() {
 		} else if entry.EntryType == 2 && currTime - entry.lastUpdatedTime >= s.tFailure && entry.lastUpdatedTime != 0 {
 			fmt.Println("failed now but passed failure timeout")
 			s.MembershipList.List = append(s.MembershipList.List[:i], s.MembershipList.List[i+1:]...)
-			s.MembershipList.AddToBlacklist(entry)
+			s.MembershipList.AddToBlacklist(entry.IpAddress)
 		}
 	}
 }
