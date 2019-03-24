@@ -98,7 +98,7 @@ func main() {
 			fmt.Println("Received Ack from ", resultMap.IpAddress)
 			for _, entry := range myServer.MembershipList.List {
 				if entry.InitialTimeStamp == resultMap.InitialTimeStamp && entry.IpAddress == resultMap.IpAddress {
-					myServer.MembershipList.UpdateNode2(resultMap.InitialTimeStamp, resultMap.IpAddress, 0, 0)
+					myServer.MembershipList.UpdateNode2(resultMap.IpAddress, 0, 0)
 					break
 				}
 			}
@@ -108,7 +108,7 @@ func main() {
 			fmt.Println("Received QUIT from ", resultMap.IpAddress)
 			//received leave
 			//s.MembershipList.RemoveNode(incomingIP)
-			myServer.MembershipList.AddToBlacklist(server.Entry{"None", resultMap.IpAddress, resultMap.InitialTimeStamp, -1, -1, -1})
+			myServer.MembershipList.AddToBlacklist(resultMap.IpAddress)
 			myServer.MergeList(resultMap)
 		}
 
