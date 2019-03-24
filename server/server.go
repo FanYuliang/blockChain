@@ -226,22 +226,16 @@ func (s *Server) checkMembershipList() {
 	//check if any process is MembershipList or failed
 	for i:= len(s.MembershipList.List)-1; i>=0; i-- {
 		entry := s.MembershipList.List[i]
-		if entry.EntryType == 0 && currTime - entry.lastUpdatedTime >= s.tDetection&& entry.lastUpdatedTime != 0  {
+		if entry.EntryType == 0 && currTime - entry.lastUpdatedTime >= s.tDetection && entry.lastUpdatedTime != 0  {
 			//alive now but passed detection timeout
-			s.MembershipList.List[i].EntryType += 1
+			s.MembershipList.List[i].EntryType = 1
 			s.MembershipList.List[i].lastUpdatedTime = 0
 		} else if entry.EntryType == 1 && currTime - entry.lastUpdatedTime >= s.tSuspect && entry.lastUpdatedTime != 0 {
 			//suspected now but passed suspected timeout
-			s.MembershipList.List[i].EntryType += 1
-			s.MembershipList.List[i].lastUpdatedTime = currTime
+			s.MembershipList.List[i].EntryType = 2
+			s.MembershipList.List[i].lastUpdatedTime = 0
 		} else if entry.EntryType == 2 && currTime - entry.lastUpdatedTime >= s.tFailure && entry.lastUpdatedTime != 0 {
 			fmt.Println("failed now but passed failure timeout")
-			s.MembershipList.List = append(s.MembershipList.List[:i], s.MembershipList.List[i+1:]...)
-			s.MembershipList.AddToBlacklist(entry)
-		} else if entry.EntryType == 2 && entry.lastUpdatedTime == 0 {
-			s.MembershipList.List = append(s.MembershipList.List[:i], s.MembershipList.List[i+1:]...)
-			s.MembershipList.AddToBlacklist(entry)
-		} else if entry.EntryType == 3 && currTime - entry.lastUpdatedTime >= s.tLeave {
 			s.MembershipList.List = append(s.MembershipList.List[:i], s.MembershipList.List[i+1:]...)
 			s.MembershipList.AddToBlacklist(entry)
 		}
