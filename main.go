@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -54,8 +55,8 @@ func main() {
 
 	targetConn, err := net.Dial("tcp", serviceAddr)
 	utils.CheckError(err)
-
-	_, err = fmt.Fprintf(targetConn, utils.Concatenate("CONNECT ", name, myAddr, "\n"))
+	myAddrArr := strings.Split(myAddr, ":")
+	_, err = fmt.Fprintf(targetConn, utils.Concatenate("CONNECT ", name, " ", myAddrArr[0], " ",myAddrArr[1], "\n"))
 	utils.CheckError(err)
 
 	iparr := utils.StringAddrToIntArr(myAddr)
