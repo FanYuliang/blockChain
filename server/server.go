@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"log"
 	"mp2/config"
 	"mp2/utils"
@@ -108,8 +109,10 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 func (s *Server) StartPing(duration time.Duration) {
 	for {
 		time.Sleep(duration)
+		s.MembershipList.ListMutex.Lock()
 		s.ping()
 		s.checkMembershipList()
+		s.MembershipList.ListMutex.Unlock()
 		//fmt.Println("Transaction count: ", len(s.Transactions))
 	}
 }
@@ -120,34 +123,15 @@ func (s *Server) StartPing(duration time.Duration) {
 func (s *Server) ping() {
 	//fmt.Println("Start to ping...")
 	targetIndices := s.getPingTargets()
-	//fmt.Println("targetIndices", targetIndices)
-
 
 	for _, index := range targetIndices {
-		s.MembershipList.ListMutex.Lock()
+
 		if s.MembershipList.List[index].lastUpdatedTime != 0 {
-			s.MembershipList.ListMutex.Unlock()
 			continue
 		}
 		ipAddress := s.MembershipList.List[index].IpAddress
-		s.MembershipList.ListMutex.Unlock()
-
-		//TODO: to delete, for testing purpose
-		////////////////
-		//fmt.Println("I am ", s.name)
-		//fmt.Println("Target ipAddress: ", ipAddress)
-		//if s.name == "node4" && ipAddress == "127.0.0.1:6100" {
-		//	fmt.Println("SKIP!!!!!!!!!")
-		//	continue
-		//}
-		//
-		/////////////////
-
 		s.sendMessageWithUDP("Ping", ipAddress, false)
-
-		s.MembershipList.ListMutex.Lock()
 		s.MembershipList.List[index].lastUpdatedTime = time.Now().Unix()
-		s.MembershipList.ListMutex.Unlock()
 	}
 
 
@@ -178,10 +162,8 @@ func (s *Server) Join(introducerIPAddress string) {
 	This function invoke when it quits the group
 */
 func (s *Server) Quit() {
-	//fmt.Println("Sending QUIT request")
+	fmt.Println("Sending QUIT request")
 	s.MembershipList.UpdateNode2(s.MyAddress, 2, 0)
-	//s.MembershipList.RemoveNode(s.MyAddress, s.InitialTimeStamp)
-
 	for _, entry := range s.MembershipList.List {
 		s.MembershipList.ListMutex.Lock()
 		ipAddress := entry.IpAddress
@@ -211,8 +193,6 @@ func (s *Server) MergeList(receivedRequest Action) {
 }
 
 func (s *Server) checkMembershipList() {
-	s.MembershipList.ListMutex.Lock()
-	defer s.MembershipList.ListMutex.Unlock()
 	currTime := time.Now().Unix()
 	//check if any process is MembershipList or failed
 	for i := len(s.MembershipList.List) - 1; i >= 0; i-- {
@@ -284,8 +264,6 @@ func (s *Server) getTransactSubset() map[string]Transaction {
 }
 
 func (s *Server) getMemebershipSubset(subsetNum int) []Entry {
-	s.MembershipList.ListMutex.Lock()
-	defer s.MembershipList.ListMutex.Unlock()
 	tempArr := utils.Arange(0, len(s.MembershipList.List), 1)
 	shuffledArr := utils.Shuffle(tempArr)
 	var res [] Entry
@@ -309,14 +287,12 @@ func (s *Server) getPingTargets() []int {
 }
 
 func (s *Server) findSelfInMembershipList() int {
-	s.MembershipList.ListMutex.Lock()
-	defer s.MembershipList.ListMutex.Unlock()
 	for ind, entry := range s.MembershipList.List {
 		if s.MyAddress == entry.IpAddress {
 			return ind
 		}
 	}
 
-	//fmt.Println("Fail to find self in membership list.")
+	fmt.Println("Fail to find self in membership list.")
 	return -1
 }

@@ -68,7 +68,7 @@ func main() {
 	go func() {
 		_ = <-sigs
 
-		//fmt.Println("Received signal from user, about to gracefully terminate the server")
+		fmt.Println("Received signal from user, about to gracefully terminate the server")
 		myServer.Quit()
 		log.Println("CONTROL-C")
 		os.Exit(5)
