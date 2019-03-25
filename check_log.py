@@ -15,8 +15,9 @@ def process_file(filename, is_total=False):
 			res[content[0]] = float(content[1])
 	else:
 		for i, content in enumerate(contents):
-			if content[0] == "Bandwidth":
-				total_bandwidth += int(content[1])
+			print("content: ", content)
+			if content[2] == "Bandwidth":
+				total_bandwidth += int(content[3])
 			else:
 				res[content[2]] = float(content[3])/1e9
 

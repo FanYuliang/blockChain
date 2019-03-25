@@ -70,7 +70,7 @@ func main() {
 
 		fmt.Println("Received signal from user, about to gracefully terminate the server")
 		myServer.Quit()
-		log.Printf(utils.Concatenate("Bandwidth ", string(myServer.Bandwidth)))
+		log.Printf(utils.Concatenate("Bandwidth ", myServer.Bandwidth))
 		os.Exit(5)
 	}()
 
