@@ -293,6 +293,6 @@ func (s *Server) findSelfInMembershipList() int {
 		}
 	}
 
-	//fmt.Println("Fail to find self in membership list.")
+	fmt.Println("Fail to find self in membership list.")
 	return -1
 }
