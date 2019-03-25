@@ -123,7 +123,8 @@ func (s *Server) StartPing(duration time.Duration) {
 func (s *Server) ping() {
 	//fmt.Println("Start to ping...")
 	targetIndices := s.getPingTargets()
-	//fmt.Println("targetIndices", targetIndices)
+	fmt.Println("membership list size: ", len(s.MembershipList.List))
+	fmt.Println("targetIndices", targetIndices)
 	for _, index := range targetIndices {
 
 		if s.MembershipList.List[index].lastUpdatedTime != 0 {
