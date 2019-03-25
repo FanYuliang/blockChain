@@ -15,7 +15,6 @@ def process_file(filename, is_total=False):
 			res[content[0]] = float(content[1])
 	else:
 		for i, content in enumerate(contents):
-			print("content: ", content)
 			if content[2] == "Bandwidth":
 				total_bandwidth += int(content[3])
 			else:
@@ -35,11 +34,12 @@ for filename in os.listdir("logs/"):
 print("Total bandwidth: ", total_bandwidth)
 
 def check_if_transaction_received(transaction_id, nodes):
+	res = True
 	for filename, node_map in nodes.items():
-		if transaction_id not in node_map:
+		if transaction_id not in node_map.keys():
 			print(transaction_id, filename, " is missing")
-			return False
-	return True
+			res = False
+	return res
 
 def check_all_transaction_received_by_all_nodes(total_transaction, nodes):
 	failed_transactions = []
