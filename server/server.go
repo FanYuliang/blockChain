@@ -123,14 +123,16 @@ func (s *Server) StartPing(duration time.Duration) {
 	}
 }
 
+
+
 /*
 	This function should ping to num processes. And at the same time, it should disseminate entries stored in the disseminateList
 */
 func (s *Server) ping() {
 	//fmt.Println("Start to ping...")
 	targetIndices := s.getPingTargets()
-
-	fmt.Println("membership list size: ", len(s.MembershipList.List))
+	s.getNonFailureMembershipSize()
+	//fmt.Println("membership list size: ", len(s.MembershipList.List))
 	//fmt.Println("targetIndices", targetIndices)
 
 	for _, index := range targetIndices {
@@ -209,9 +211,10 @@ func (s *Server) checkMembershipList() {
 		if entry.EntryType == 0 && currTime-entry.lastUpdatedTime >= s.tDetection && entry.lastUpdatedTime != 0 {
 			//alive now but passed detection timeout
 			s.MembershipList.List[i].lastUpdatedTime = 0
+			s.MembershipList.List[i].EntryType = 1
 		} else if entry.EntryType == 1 && currTime-entry.lastUpdatedTime >= s.tSuspect && entry.lastUpdatedTime != 0 {
 			//suspected now but passed suspected timeout
-			s.MembershipList.List[i].lastUpdatedTime = 0
+			s.MembershipList.List[i].EntryType = 2
 		}
 	}
 }
@@ -302,4 +305,15 @@ func (s *Server) findSelfInMembershipList() int {
 
 	fmt.Println("Fail to find self in membership list.")
 	return -1
+}
+
+
+func (s *Server) getNonFailureMembershipSize() {
+	size := 0
+	for _, v := range s.MembershipList.List {
+		if v.EntryType != 2 {
+			size += 1
+		}
+	}
+	fmt.Println("Non failure membership size: ", size)
 }
