@@ -123,9 +123,6 @@ func (s *Server) ping() {
 	targetIndices := s.getPingTargets()
 	//fmt.Println("targetIndices", targetIndices)
 	suspicious_entry := s.MembershipList.GetSuspiciousEntry()
-	if len(suspicious_entry) != 0{
-		fmt.Println("suspicious entry = ",suspicious_entry)
-	}
 
 
 	for _, index := range targetIndices {
@@ -169,6 +166,7 @@ func (s *Server) ping() {
 	s.MembershipList.BlacklistMutex.Lock()
 	if len(s.MembershipList.Blacklist) > 0 {
 		fmt.Println("server's Blacklist: ", s.MembershipList.Blacklist)
+		fmt.Println("suspicious list is : ",suspicious_entry)
 		os.Exit(9)
 	}
 
