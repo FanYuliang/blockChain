@@ -3,8 +3,10 @@ import pprint
 import numpy as np
 
 total_bandwidth = 0
+total_message_receive = 0
 def process_file(filename, is_total=False):
 	global total_bandwidth
+	global total_message_receive
 	with open("logs/" + filename) as f:
 		contents = f.readlines()
 
@@ -17,6 +19,8 @@ def process_file(filename, is_total=False):
 		for i, content in enumerate(contents):
 			if content[2] == "Bandwidth":
 				total_bandwidth += int(content[3])
+			elif content[2] == "Messagereceive":
+				total_message_receive += int(content[3])
 			else:
 				res[content[2]] = float(content[3])/1e9
 
@@ -32,6 +36,7 @@ for filename in os.listdir("logs/"):
 		nodes[filename] = process_file(filename)
 
 print("Total bandwidth: ", total_bandwidth)
+print("Total message receive: ",total_message_receive)
 
 def check_if_transaction_received(transaction_id, nodes):
 	res = True

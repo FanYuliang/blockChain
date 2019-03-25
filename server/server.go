@@ -30,6 +30,7 @@ type Server struct {
 	BandwidthLock		sync.Mutex
 	Transactions        map[string]*Transaction
 	TransactionMutex    sync.Mutex
+	MessageReceive 		int
 }
 
 func (s *Server) Constructor(name string, introducerIP string, myIP string) {
@@ -61,6 +62,8 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string) {
 	entry.InitialTimeStamp = currTimeStamp
 	entry.IpAddress = myIP
 	s.MembershipList.AddNewNode(entry)
+
+	s.MessageReceive = 0
 }
 
 func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
@@ -80,6 +83,7 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 			//fmt.Println("introducer serverAddr: ", serverAddr)
 			s.Join(serverAddr)
 		} else if messageType == "TRANSACTION" {
+			s.MessageReceive += 1
 			//received a transaction message from service server
 			timeStamp, err := strconv.ParseFloat(messageArr[1], 64)
 			utils.CheckError(err)
