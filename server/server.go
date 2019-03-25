@@ -3,7 +3,6 @@ package server
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"log"
 	"mp2/config"
 	"mp2/utils"
@@ -122,7 +121,6 @@ func (s *Server) ping() {
 	//fmt.Println("Start to ping...")
 	targetIndices := s.getPingTargets()
 	//fmt.Println("targetIndices", targetIndices)
-	suspicious_entry := s.MembershipList.GetSuspiciousEntry()
 
 
 	for _, index := range targetIndices {
@@ -145,22 +143,11 @@ func (s *Server) ping() {
 		//
 		/////////////////
 
-		if (suspicious_entry[ipAddress]==true){
-			delete(suspicious_entry,ipAddress)
-		}
-
 		s.sendMessageWithUDP("Ping", ipAddress, false)
 
 		s.MembershipList.ListMutex.Lock()
 		s.MembershipList.List[index].lastUpdatedTime = time.Now().Unix()
 		s.MembershipList.ListMutex.Unlock()
-	}
-	if len(suspicious_entry) != 0{
-		// give the suspicious entry last chance
-		for k,_ := range suspicious_entry{
-			fmt.Println("final confirm of suspicious entry", k)
-			s.sendMessageWithUDP("Ping", k, false)
-		}
 	}
 
 
@@ -312,22 +299,11 @@ func (s *Server) getMemebershipSubset(subsetNum int) []Entry {
 }
 
 func (s *Server) getPingTargets() []int {
-
-	s.MembershipList.ListMutex.Lock()
-	tempArr := utils.Arange(0, len(s.MembershipList.List), 1)
-	s.MembershipList.ListMutex.Unlock()
-	shuffledArr := utils.Shuffle(tempArr)
-	var res []int
-
 	selfInd := s.findSelfInMembershipList()
-	for _, v := range shuffledArr {
-		if v != selfInd {
-			if s.MembershipList.List[v].EntryType == 1 {
-				res = append(res, v)
-			} else if len(res) < s.pingNum {
-				res = append(res, v)
-			}
-		}
+	tempArr := utils.Arange(selfInd, selfInd + int(len(s.MembershipList.List)/2) + 1, 1)
+	var res []int
+	for _, v := range tempArr {
+		res = append(res, v%len(s.MembershipList.List))
 	}
 	return res
 }
