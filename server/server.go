@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"log"
 	"mp2/config"
 	"mp2/utils"
@@ -121,6 +122,11 @@ func (s *Server) ping() {
 	//fmt.Println("Start to ping...")
 	targetIndices := s.getPingTargets()
 	//fmt.Println("targetIndices", targetIndices)
+	suspicious_entry := s.MembershipList.GetSuspiciousEntry()
+	if len(suspicious_entry) != 0{
+		fmt.Println("suspicious entry = ",suspicious_entry)
+	}
+
 
 	for _, index := range targetIndices {
 		s.MembershipList.ListMutex.Lock()
@@ -142,11 +148,22 @@ func (s *Server) ping() {
 		//
 		/////////////////
 
+		if (suspicious_entry[ipAddress]==true){
+			delete(suspicious_entry,ipAddress)
+		}
+
 		s.sendMessageWithUDP("Ping", ipAddress, false)
 
 		s.MembershipList.ListMutex.Lock()
 		s.MembershipList.List[index].lastUpdatedTime = time.Now().Unix()
 		s.MembershipList.ListMutex.Unlock()
+	}
+	if len(suspicious_entry) != 0{
+		// give the suspicious entry last chance
+		for k,_ := range suspicious_entry{
+			fmt.Println("final confirm of suspicious entry", k)
+			s.sendMessageWithUDP("Ping", k, false)
+		}
 	}
 
 	var names []string
@@ -241,11 +258,17 @@ func (s *Server) sendMessageWithUDP(actionType string, ipAddress string, sendAll
 	Conn, err := net.DialUDP("udp", nil, &net.UDPAddr{IP: iparr, Port: myPort, Zone: ""})
 	utils.CheckError(err)
 	defer Conn.Close()
+
+
+	listToSend := s.getMemebershipSubset(int(float32(len(s.MembershipList.List))*0.5))
+
 	num := int(float32(len(s.MembershipList.List))*0.3)
+
 	if num < 1 {
 		num = 1
 	}
-	listToSend := s.getMemebershipSubset(num)
+	listToSend = s.getMemebershipSubset(num)
+
 	transactionToSend := s.getTransactSubset()
 
 	action := Action{EncodeActionType(actionType), listToSend, s.InitialTimeStamp, s.MyAddress, transactionToSend}
