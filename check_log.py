@@ -18,7 +18,7 @@ def process_file(filename, is_total=False):
 	else:
 		for i, content in enumerate(contents):
 			if content[2] == "Bandwidth":
-				total_bandwidth += int(content[3])
+				total_bandwidth += float(content[3][:-1])
 			elif content[2] == "Messagereceive":
 				total_message_receive += int(content[3])
 			else:
@@ -36,7 +36,7 @@ for filename in os.listdir("logs/"):
 		nodes[filename] = process_file(filename)
 
 print("Total bandwidth: ", total_bandwidth)
-print("Total message receive: ",total_message_receive)
+#print("Total message receive: ",total_message_receive)
 
 def check_if_transaction_received(transaction_id, nodes):
 	res = True
@@ -81,6 +81,21 @@ def calculate_avg_propagation_delay(total_transaction, nodes):
 	pprint.pprint(delays3)
 	return np.mean(np.array(delays1)), np.mean(np.array(delays2))
 
+def calculate_node_reached_in_thanos(transaction_id,nodes):
+	res = 0
+	for filename, node_map in nodes.items():
+		if transaction_id in node_map.keys():
+			res += 1
+	return res
+def calculate_thanos_node_num(total_transaction,nodes):
+	res = []
+	for transaction_id in total_transaction:
+		node_num = calculate_node_reached_in_thanos(transaction_id,nodes)
+		res.append(node_num)
+	return res
+res = calculate_thanos_node_num(total_transaction,nodes)
+print("thanos list = ",res)
+'''
 failed_transactions = check_all_transaction_received_by_all_nodes(total_transaction, nodes)
 
 
@@ -91,15 +106,14 @@ else:
 	pprint.pprint(failed_transactions)
 
 
-print("Propagation delays: ")
-avg_propagation_delay1, avg_propagation_delay2 = calculate_avg_propagation_delay(total_transaction, nodes)
+# print("Propagation delays: ")
+# avg_propagation_delay1, avg_propagation_delay2 = calculate_avg_propagation_delay(total_transaction, nodes)
 
-print("Average propagation delays to reach half of the nodes: \n", avg_propagation_delay1)
-print("Average propagation delays to reach all of the nodes: \n", avg_propagation_delay2)
-
-
+# print("Average propagation delays to reach half of the nodes: \n", avg_propagation_delay1)
+# print("Average propagation delays to reach all of the nodes: \n", avg_propagation_delay2)
 
 
+'''
 
 
 

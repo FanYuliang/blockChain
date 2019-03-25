@@ -61,7 +61,7 @@ func main() {
 	iparr := utils.StringAddrToIntArr(myAddr)
 	ServerConn, err := net.ListenUDP("udp", &net.UDPAddr{IP:iparr,Port:portNum,Zone:""})
 	defer ServerConn.Close()
-
+	starttime := time.Now().Unix()
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -70,8 +70,11 @@ func main() {
 
 		fmt.Println("Received signal from user, about to gracefully terminate the server")
 		myServer.Quit()
-		log.Printf(utils.Concatenate("Bandwidth ", myServer.Bandwidth))
-		log.Println(utils.Concatenate("Messagereceive ", myServer.MessageReceive))
+		endtime := time.Now().Unix()
+		fmt.Println("time cost: ",float64(endtime-starttime))
+		nodebandwidth := float64(myServer.Bandwidth)/float64(endtime-starttime)
+		log.Printf(utils.Concatenate("Bandwidth ", nodebandwidth))
+		//log.Println(utils.Concatenate("Messagereceive ", myServer.MessageReceive))
 		os.Exit(5)
 	}()
 
