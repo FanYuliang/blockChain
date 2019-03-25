@@ -108,8 +108,10 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 func (s *Server) StartPing(duration time.Duration) {
 	for {
 		time.Sleep(duration)
+		s.MembershipList.ListMutex.Lock()
 		s.ping()
 		s.checkMembershipList()
+		s.MembershipList.ListMutex.Unlock()
 		//fmt.Println("Transaction count: ", len(s.Transactions))
 	}
 }
@@ -123,30 +125,13 @@ func (s *Server) ping() {
 	//fmt.Println("targetIndices", targetIndices)
 
 	for _, index := range targetIndices {
-		s.MembershipList.ListMutex.Lock()
+
 		if s.MembershipList.List[index].lastUpdatedTime != 0 {
-			s.MembershipList.ListMutex.Unlock()
 			continue
 		}
 		ipAddress := s.MembershipList.List[index].IpAddress
-		s.MembershipList.ListMutex.Unlock()
-
-		//TODO: to delete, for testing purpose
-		////////////////
-		//fmt.Println("I am ", s.name)
-		//fmt.Println("Target ipAddress: ", ipAddress)
-		//if s.name == "node4" && ipAddress == "127.0.0.1:6100" {
-		//	fmt.Println("SKIP!!!!!!!!!")
-		//	continue
-		//}
-		//
-		/////////////////
-
 		s.sendMessageWithUDP("Ping", ipAddress, false)
-
-		s.MembershipList.ListMutex.Lock()
 		s.MembershipList.List[index].lastUpdatedTime = time.Now().Unix()
-		s.MembershipList.ListMutex.Unlock()
 	}
 
 	var names []string
@@ -209,8 +194,6 @@ func (s *Server) MergeList(receivedRequest Action) {
 }
 
 func (s *Server) checkMembershipList() {
-	s.MembershipList.ListMutex.Lock()
-	defer s.MembershipList.ListMutex.Unlock()
 	currTime := time.Now().Unix()
 	//check if any process is MembershipList or failed
 	for i := len(s.MembershipList.List) - 1; i >= 0; i-- {
