@@ -2,7 +2,9 @@ import os
 import pprint
 import numpy as np
 
+total_bandwidth = 0
 def process_file(filename, is_total=False):
+	global total_bandwidth
 	with open("logs/" + filename) as f:
 		contents = f.readlines()
 
@@ -12,11 +14,9 @@ def process_file(filename, is_total=False):
 		for content in contents:
 			res[content[0]] = float(content[1])
 	else:
-		isControlC = False
 		for i, content in enumerate(contents):
-			if i == len(contents) - 1:
-				if content[2] != "CONTROL-C\n":
-					print("Somehow I died. ", filename)
+			if content[0] == "Bandwidth":
+				total_bandwidth += int(content[1])
 			else:
 				res[content[2]] = float(content[3])/1e9
 
@@ -31,7 +31,7 @@ for filename in os.listdir("logs/"):
 		node_name = filename.split('.')[0]
 		nodes[filename] = process_file(filename)
 
-
+print("Total bandwidth: ", total_bandwidth)
 
 def check_if_transaction_received(transaction_id, nodes):
 	for filename, node_map in nodes.items():
