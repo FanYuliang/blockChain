@@ -18,7 +18,6 @@ def process_file(filename, is_total=False):
 				if content[2] != "CONTROL-C\n":
 					print("Somehow I died. ", filename)
 			else:
-				print(content, i, filename)
 				res[content[2]] = float(content[3])/1e9
 
 	return res

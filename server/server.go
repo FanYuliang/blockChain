@@ -3,7 +3,6 @@ package server
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"log"
 	"mp2/config"
 	"mp2/utils"
@@ -89,11 +88,11 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 			amount, err := strconv.Atoi(messageArr[5])
 			utils.CheckError(err)
 			newTransaction := new(Transaction)
-			newTransaction.Timestamp = timeStamp
+			newTransaction.timestamp = timeStamp
 			newTransaction.ID = transactionID
-			newTransaction.DNum = dNum
-			newTransaction.SNum = sNum
-			newTransaction.Amount = amount
+			newTransaction.dNum = dNum
+			newTransaction.sNum = sNum
+			newTransaction.amount = amount
 			s.TransactionMutex.Lock()
 			s.Transactions[transactionID] = newTransaction
 			log.Println(transactionID, time.Now().UnixNano())
@@ -150,14 +149,6 @@ func (s *Server) ping() {
 		s.MembershipList.ListMutex.Unlock()
 	}
 
-	s.MembershipList.BlacklistMutex.Lock()
-	if len(s.MembershipList.Blacklist) > 0 {
-		fmt.Println("server's Blacklist: ", s.MembershipList.Blacklist)
-		os.Exit(9)
-	}
-
-	s.MembershipList.BlacklistMutex.Unlock()
-
 	var names []string
 	for _, v := range s.MembershipList.List {
 		names = append(names, v.Name)
@@ -186,7 +177,7 @@ func (s *Server) Join(introducerIPAddress string) {
 */
 func (s *Server) Quit() {
 	//fmt.Println("Sending QUIT request")
-	s.MembershipList.UpdateNode2(s.MyAddress, 3, 0)
+	s.MembershipList.UpdateNode2(s.MyAddress, 2, 0)
 	//s.MembershipList.RemoveNode(s.MyAddress, s.InitialTimeStamp)
 
 	for _, entry := range s.MembershipList.List {
@@ -201,16 +192,7 @@ func (s *Server) MergeList(receivedRequest Action) {
 	//fmt.Println("Start to merge list...")
 	for _, entry := range receivedRequest.Record {
 		if entry.IpAddress != s.MyAddress {
-			index := s.MembershipList.UpdateNode(entry)
-			if index != -1 {
-				s.MembershipList.ListMutex.Lock()
-				if s.MyAddress == s.MembershipList.List[index].IpAddress {
-					//only process j can increase its own incarnation number
-					s.MembershipList.List[index].Incarnation += 1
-					s.MembershipList.List[index].EntryType = 0
-				}
-				s.MembershipList.ListMutex.Unlock()
-			}
+			s.MembershipList.UpdateNode(entry)
 		}
 	}
 
@@ -224,10 +206,6 @@ func (s *Server) MergeList(receivedRequest Action) {
 
 	}
 	s.TransactionMutex.Unlock()
-
-	s.MembershipList.ListMutex.Lock()
-
-	s.MembershipList.ListMutex.Unlock()
 }
 
 func (s *Server) checkMembershipList() {
@@ -248,7 +226,6 @@ func (s *Server) checkMembershipList() {
 		} else if entry.EntryType == 2 && currTime-entry.lastUpdatedTime >= s.tFailure && entry.lastUpdatedTime != 0 {
 			//fmt.Println("failed now but passed failure timeout")
 			s.MembershipList.List = append(s.MembershipList.List[:i], s.MembershipList.List[i+1:]...)
-			s.MembershipList.AddToBlacklist(entry.IpAddress)
 		}
 	}
 }
@@ -323,11 +300,12 @@ func (s *Server) getPingTargets() []int {
 
 	selfInd := s.findSelfInMembershipList()
 	for _, v := range shuffledArr {
-		if len(res) > s.pingNum {
-			break
-		}
 		if v != selfInd {
-			res = append(res, v)
+			if s.MembershipList.List[v].EntryType == 1 {
+				res = append(res, v)
+			} else if len(res) < s.pingNum {
+				res = append(res, v)
+			}
 		}
 	}
 	return res

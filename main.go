@@ -115,7 +115,6 @@ func main() {
 			//fmt.Println("Received QUIT from ", resultMap.IpAddress)
 			//received leave
 			//s.MembershipList.RemoveNode(incomingIP)
-			myServer.MembershipList.AddToBlacklist(resultMap.IpAddress)
 			myServer.MergeList(resultMap)
 		}
 

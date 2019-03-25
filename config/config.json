@@ -2,9 +2,9 @@
   "ServiceIP"   : "127.0.0.1",
   "ServicePort" : 5800,
   "DetectionTimeout": 2,
-  "SuspiciousTimeout": 2,
+  "SuspiciousTimeout": 5,
   "FailureTimeout": 2,
-  "PingNum": 50,
+  "PingNum": 51,
   "TransacCap": 20,
-  "PingPeriod": 0.2
+  "PingPeriod": 0.5
 }

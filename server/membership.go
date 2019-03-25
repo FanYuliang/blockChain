@@ -4,14 +4,11 @@ import (
 	"fmt"
 	"sort"
 	"sync"
-	"time"
 )
 
 type Membership struct {
 	List           [] Entry
 	ListMutex      sync.Mutex
-	Blacklist      [] string //failed server's ip address
-	BlacklistMutex sync.Mutex
 }
 
 /*
@@ -20,43 +17,44 @@ type Membership struct {
 	@param entryType int
 	Invoke when the server receives response from ping.  Update the membershipList
  */
-func (m *Membership) UpdateNode(entry Entry) int{
-	if m.inBlacklist(entry.IpAddress) {
-		return -1
-	}
+func (m *Membership) UpdateNode(entry Entry) {
+	m.ListMutex.Lock()
 	for i, elem := range m.List {
 		if elem.IpAddress == entry.IpAddress  {
-			if entry.EntryType == 1 {
-				return i
-			}
-
-			if entry.Incarnation > elem.Incarnation {
-				m.ListMutex.Lock()
-				m.List[i].Incarnation = entry.Incarnation
-				m.List[i].EntryType = entry.EntryType
-				m.ListMutex.Unlock()
-			} else if entry.Incarnation == elem.Incarnation {
-				if entry.EntryType == 1 && entry.EntryType == 2 {
-					//suspected or failed or left
-					m.ListMutex.Lock()
-					m.List[i].EntryType = entry.EntryType
-					m.ListMutex.Unlock()
-				} else if entry.EntryType == 3 && elem.EntryType != 3 {
-					m.ListMutex.Lock()
-					m.List[i].EntryType = entry.EntryType
-					m.List[i].lastUpdatedTime = time.Now().Unix()
-					m.ListMutex.Unlock()
-					m.AddToBlacklist(entry.IpAddress)
+			if entry.EntryType == 0 {
+				//new entry is Alive
+				if entry.Incarnation > elem.Incarnation {
+					if m.List[i].EntryType == 0 || m.List[i].EntryType == 1 {
+						m.List[i].EntryType = 0
+						m.List[i].Incarnation = entry.Incarnation
+					}
 				}
 			}
-			return -1
+			if entry.EntryType == 1 {
+				//new entry is Suspect
+				if entry.Incarnation > elem.Incarnation && elem.EntryType == 1 {
+					m.List[i].EntryType = 1
+					m.List[i].Incarnation = entry.Incarnation
+				}
+
+				if entry.Incarnation >= elem.Incarnation && elem.EntryType == 0 {
+					m.List[i].EntryType = 1
+					m.List[i].Incarnation = entry.Incarnation
+				}
+			}
+
+			if entry.EntryType == 2 {
+				//new entry is Failure
+				m.List[i].EntryType = 2
+				m.List[i].Incarnation = entry.Incarnation
+			}
+			m.ListMutex.Unlock()
+			return
 		}
 	}
-	if entry.EntryType != 2 && entry.EntryType != 3 {
-		m.AddNewNode(entry)
-		m.SortMembership()
-	}
-	return -1
+	m.ListMutex.Unlock()
+	m.AddNewNode(entry)
+	m.SortMembership()
 }
 func (m *Membership) SortMembership(){
 	m.ListMutex.Lock()
@@ -121,25 +119,4 @@ func (m *Membership) ContainsNode(entry Entry) bool {
 		}
 	}
 	return false
-}
-
-func (m *Membership) inBlacklist(ipaddr string) bool {
-	m.BlacklistMutex.Lock()
-	defer m.BlacklistMutex.Unlock()
-
-	for _, elem := range m.Blacklist {
-		if elem == ipaddr {
-			return true
-		}
-	}
-	return false
-}
-
-func (m *Membership) AddToBlacklist(ipaddr string) {
-
-	if !m.inBlacklist(ipaddr) {
-		m.BlacklistMutex.Lock()
-		m.Blacklist = append(m.Blacklist, ipaddr)
-		m.BlacklistMutex.Unlock()
-	}
 }
