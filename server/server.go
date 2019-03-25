@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"log"
 	"mp2/config"
 	"mp2/utils"
@@ -123,7 +124,6 @@ func (s *Server) ping() {
 	//fmt.Println("Start to ping...")
 	targetIndices := s.getPingTargets()
 	//fmt.Println("targetIndices", targetIndices)
-
 	for _, index := range targetIndices {
 
 		if s.MembershipList.List[index].lastUpdatedTime != 0 {
@@ -161,10 +161,8 @@ func (s *Server) Join(introducerIPAddress string) {
 	This function invoke when it quits the group
 */
 func (s *Server) Quit() {
-	//fmt.Println("Sending QUIT request")
+	fmt.Println("Sending QUIT request")
 	s.MembershipList.UpdateNode2(s.MyAddress, 2, 0)
-	//s.MembershipList.RemoveNode(s.MyAddress, s.InitialTimeStamp)
-
 	for _, entry := range s.MembershipList.List {
 		s.MembershipList.ListMutex.Lock()
 		ipAddress := entry.IpAddress
@@ -265,8 +263,6 @@ func (s *Server) getTransactSubset() map[string]Transaction {
 }
 
 func (s *Server) getMemebershipSubset(subsetNum int) []Entry {
-	s.MembershipList.ListMutex.Lock()
-	defer s.MembershipList.ListMutex.Unlock()
 	tempArr := utils.Arange(0, len(s.MembershipList.List), 1)
 	shuffledArr := utils.Shuffle(tempArr)
 	var res [] Entry
@@ -290,8 +286,6 @@ func (s *Server) getPingTargets() []int {
 }
 
 func (s *Server) findSelfInMembershipList() int {
-	s.MembershipList.ListMutex.Lock()
-	defer s.MembershipList.ListMutex.Unlock()
 	for ind, entry := range s.MembershipList.List {
 		if s.MyAddress == entry.IpAddress {
 			return ind
