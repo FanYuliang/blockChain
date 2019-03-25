@@ -199,15 +199,10 @@ func (s *Server) checkMembershipList() {
 		entry := s.MembershipList.List[i]
 		if entry.EntryType == 0 && currTime-entry.lastUpdatedTime >= s.tDetection && entry.lastUpdatedTime != 0 {
 			//alive now but passed detection timeout
-			s.MembershipList.List[i].EntryType = 1
 			s.MembershipList.List[i].lastUpdatedTime = 0
 		} else if entry.EntryType == 1 && currTime-entry.lastUpdatedTime >= s.tSuspect && entry.lastUpdatedTime != 0 {
 			//suspected now but passed suspected timeout
-			s.MembershipList.List[i].EntryType = 2
 			s.MembershipList.List[i].lastUpdatedTime = 0
-		} else if entry.EntryType == 2 && currTime-entry.lastUpdatedTime >= s.tFailure && entry.lastUpdatedTime != 0 {
-			//fmt.Println("failed now but passed failure timeout")
-			s.MembershipList.List = append(s.MembershipList.List[:i], s.MembershipList.List[i+1:]...)
 		}
 	}
 }
