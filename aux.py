@@ -5,7 +5,7 @@ import signal
 if (len(sys.argv) != 3):
 	print("usage: aux.py <node_num> <vm_num>")
 	sys.exit(1)
-
+subprocess.call(['rm', 'logs/*'])
 node_num = sys.argv[1]
 vm_num = sys.argv[2]
 arr = []
