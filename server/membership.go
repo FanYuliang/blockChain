@@ -24,10 +24,15 @@ func (m *Membership) UpdateNode(entry Entry) {
 			if entry.EntryType == 0 {
 				//new entry is Alive
 				if entry.Incarnation > elem.Incarnation {
-					if m.List[i].EntryType == 0 || m.List[i].EntryType == 1 {
+					if m.List[i].EntryType == 0  {
+						m.List[i].EntryType = 0
+						m.List[i].Incarnation = entry.Incarnation
+					} else if m.List[i].EntryType == 1 {
+						fmt.Println("SUSPECT -> ALIVE")
 						m.List[i].EntryType = 0
 						m.List[i].Incarnation = entry.Incarnation
 					}
+
 				}
 			}
 			if entry.EntryType == 1 {
