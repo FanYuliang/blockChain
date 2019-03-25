@@ -1,9 +1,9 @@
 package server
 
 type Transaction struct {
-	Timestamp float64
+	timestamp float64
 	ID        string
-	SNum      int
-	DNum      int
-	Amount    int
+	sNum      int
+	dNum      int
+	amount    int
 }
