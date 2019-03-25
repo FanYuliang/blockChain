@@ -26,6 +26,8 @@ type Server struct {
 	MembershipList      *Membership
 	MyAddress           string
 	InitialTimeStamp    int64
+	Bandwidth			int
+	BandwidthLock		sync.Mutex
 	Transactions        map[string]*Transaction
 	TransactionMutex    sync.Mutex
 }
@@ -113,7 +115,7 @@ func (s *Server) StartPing(duration time.Duration) {
 		s.ping()
 		s.checkMembershipList()
 		s.MembershipList.ListMutex.Unlock()
-		//fmt.Println("Transaction count: ", len(s.Transactions))
+		fmt.Println(s.name, " Transaction count: ", len(s.Transactions))
 	}
 }
 
@@ -123,6 +125,9 @@ func (s *Server) StartPing(duration time.Duration) {
 func (s *Server) ping() {
 	//fmt.Println("Start to ping...")
 	targetIndices := s.getPingTargets()
+
+	fmt.Println("membership list size: ", len(s.MembershipList.List))
+	//fmt.Println("targetIndices", targetIndices)
 
 	for _, index := range targetIndices {
 
@@ -199,15 +204,10 @@ func (s *Server) checkMembershipList() {
 		entry := s.MembershipList.List[i]
 		if entry.EntryType == 0 && currTime-entry.lastUpdatedTime >= s.tDetection && entry.lastUpdatedTime != 0 {
 			//alive now but passed detection timeout
-			s.MembershipList.List[i].EntryType = 1
 			s.MembershipList.List[i].lastUpdatedTime = 0
 		} else if entry.EntryType == 1 && currTime-entry.lastUpdatedTime >= s.tSuspect && entry.lastUpdatedTime != 0 {
 			//suspected now but passed suspected timeout
-			s.MembershipList.List[i].EntryType = 2
 			s.MembershipList.List[i].lastUpdatedTime = 0
-		} else if entry.EntryType == 2 && currTime-entry.lastUpdatedTime >= s.tFailure && entry.lastUpdatedTime != 0 {
-			//fmt.Println("failed now but passed failure timeout")
-			s.MembershipList.List = append(s.MembershipList.List[:i], s.MembershipList.List[i+1:]...)
 		}
 	}
 }
@@ -238,7 +238,10 @@ func (s *Server) sendMessageWithUDP(actionType string, ipAddress string, sendAll
 
 	action := Action{EncodeActionType(actionType), listToSend, s.InitialTimeStamp, s.MyAddress, transactionToSend}
 	//fmt.Println("actionToSend: ", action)
-	_, err = Conn.Write(action.ToBytes())
+	n, err := Conn.Write(action.ToBytes())
+	s.BandwidthLock.Lock()
+	s.Bandwidth += int(n)
+	s.BandwidthLock.Unlock()
 	utils.CheckError(err)
 }
 

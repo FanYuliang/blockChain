@@ -2,6 +2,7 @@ import asyncio
 import sys
 import random
 import re
+import subprocess
 import time
 
 if len(sys.argv) != 3:
@@ -14,7 +15,9 @@ tx_rate = float(sys.argv[2])
 connections = []
 kill_connections = []
 snap_event = asyncio.Event()
-f = open('logs/total.txt', 'w+')
+subprocess.call(['rm', 'logs/total.txt'])
+subprocess.call(['touch', 'logs/total.txt'])
+f = open('logs/total.txt', 'a+')
 
 async def handle_connection(reader, writer):
     connect_line = await reader.readline()
@@ -101,10 +104,13 @@ loop.add_reader(sys.stdin, handle_command)
 try:
     loop.run_forever()
 except KeyboardInterrupt:
+    print("Entered something")
     pass
 
 # Close the server
 server.close()
+print("112")
 f.close()
+print("114")
 loop.run_until_complete(server.wait_closed())
 loop.close()
