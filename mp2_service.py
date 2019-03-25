@@ -104,10 +104,13 @@ loop.add_reader(sys.stdin, handle_command)
 try:
     loop.run_forever()
 except KeyboardInterrupt:
+    print("Entered something")
     pass
 
 # Close the server
 server.close()
+print("112")
 f.close()
+print("114")
 loop.run_until_complete(server.wait_closed())
 loop.close()
