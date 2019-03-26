@@ -1,6 +1,11 @@
 import os
 import pprint
 import numpy as np
+import sys
+
+if len(sys.argv) !=2 :
+	print("usage: check_log.py [T/F]")
+	sys.exit()
 
 total_bandwidth = 0
 total_message_receive = 0
@@ -93,27 +98,39 @@ def calculate_thanos_node_num(total_transaction,nodes):
 		node_num = calculate_node_reached_in_thanos(transaction_id,nodes)
 		res.append(node_num)
 	return res
-res = calculate_thanos_node_num(total_transaction,nodes)
-print("thanos list = ",res)
-'''
-failed_transactions = check_all_transaction_received_by_all_nodes(total_transaction, nodes)
 
 
-if len(failed_transactions) == 0:
-	print("TEST1: Successfully broadcasted all transactions")
+
+
+if sys.argv[1]=="T":
+	res = calculate_thanos_node_num(total_transaction,nodes)
+	print("thanos list = ",res)
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Non-Thanos test>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+elif sys.argv[1]=="F":
+	failed_transactions = check_all_transaction_received_by_all_nodes(total_transaction, nodes)
+
+
+	if len(failed_transactions) == 0:
+		print("TEST1: Successfully broadcasted all transactions")
+	else:
+		print("TEST1: Failed to broadcast transactions for the following ids: ")
+		pprint.pprint(failed_transactions)
+		
+	print("Propagation delays: ")
+	avg_propagation_delay1, avg_propagation_delay2 = calculate_avg_propagation_delay(total_transaction, nodes)
+	print("Average propagation delays to reach half of the nodes: \n", avg_propagation_delay1)
+	print("Average propagation delays to reach all of the nodes: \n", avg_propagation_delay2)
+
 else:
-	print("TEST1: Failed to broadcast transactions for the following ids: ")
-	pprint.pprint(failed_transactions)
-
+	print("usage: check_log.py [T/F]")
+	sys.exit()
 
 # print("Propagation delays: ")
 # avg_propagation_delay1, avg_propagation_delay2 = calculate_avg_propagation_delay(total_transaction, nodes)
 
 # print("Average propagation delays to reach half of the nodes: \n", avg_propagation_delay1)
 # print("Average propagation delays to reach all of the nodes: \n", avg_propagation_delay2)
-
-
-'''
 
 
 
