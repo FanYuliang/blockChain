@@ -26,11 +26,7 @@ type Server struct {
 	MembershipList      *Membership
 	MyAddress           string
 	InitialTimeStamp    int64
-<<<<<<< HEAD
 	Bandwidth			float64
-=======
-	Bandwidth			int64
->>>>>>> 5d3d7fec6a0be4a3987aa3a0e2918587a591ec9f
 	BandwidthLock		sync.Mutex
 	Transactions        map[string]*Transaction
 	TransactionMutex    sync.Mutex
@@ -251,11 +247,7 @@ func (s *Server) sendMessageWithUDP(actionType string, ipAddress string, sendAll
 	//fmt.Println("actionToSend: ", action)
 	n, err := Conn.Write(action.ToBytes())
 	s.BandwidthLock.Lock()
-<<<<<<< HEAD
 	s.Bandwidth += float64(int(n)/1024)
-=======
-	s.Bandwidth += int64(n)
->>>>>>> 5d3d7fec6a0be4a3987aa3a0e2918587a591ec9f
 	s.BandwidthLock.Unlock()
 	utils.CheckError(err)
 }
