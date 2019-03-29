@@ -71,13 +71,13 @@ def calculate_avg_propagation_delay(total_transaction, nodes):
 		delays1.append(delay1)
 		delays2.append(delay2)
 		delays3.append(delay3)
-	print("median of one transaction: ")
+	print("med =")
 	pprint.pprint(delays1)
 
-	print("max of one transaction: ")
+	print("maximum =")
 	pprint.pprint(delays2)
 
-	print("min of one transaction: ")
+	print("minimum = ")
 	pprint.pprint(delays3)
 	return np.mean(np.array(delays1)), np.mean(np.array(delays2))
 
