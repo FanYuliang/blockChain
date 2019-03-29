@@ -7,6 +7,7 @@ import (
 	"log"
 	"mp2/config"
 	"mp2/utils"
+	"mp2/blockchain"
 	"net"
 	"os"
 	"strconv"
@@ -28,7 +29,8 @@ type Server struct {
 	InitialTimeStamp    int64
 	Bandwidth			float64
 	BandwidthLock		sync.Mutex
-	Transactions        map[string]*Transaction
+	Block   			blockchain.Block
+	Transactions        map[string]* blockchain.Transaction
 	TransactionMutex    sync.Mutex
 	MessageReceive 		int
 }
@@ -50,7 +52,7 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string) {
 	s.TransactionCap = myConfig.TransacCap
 	s.tDetection = myConfig.DetectionTimeout
 	s.tSuspect = myConfig.SuspiciousTimeout
-	s.Transactions = make(map[string]*Transaction)
+	s.Transactions = make(map[string]*blockchain.Transaction)
 	s.tFailure = myConfig.FailureTimeout
 	s.pingNum = myConfig.PingNum
 	s.name = name
@@ -94,12 +96,12 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 			utils.CheckError(err)
 			amount, err := strconv.Atoi(messageArr[5])
 			utils.CheckError(err)
-			newTransaction := new(Transaction)
-			newTransaction.timestamp = timeStamp
+			newTransaction := new(blockchain.Transaction)
+			newTransaction.Timestamp = timeStamp
 			newTransaction.ID = transactionID
-			newTransaction.dNum = dNum
-			newTransaction.sNum = sNum
-			newTransaction.amount = amount
+			newTransaction.DNum = dNum
+			newTransaction.SNum = sNum
+			newTransaction.Amount = amount
 			s.TransactionMutex.Lock()
 			s.Transactions[transactionID] = newTransaction
 			log.Println(transactionID, time.Now().UnixNano())
@@ -108,6 +110,18 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 			//received a DIE message from service server
 			//fmt.Println("Received a DIE message from service server.")
 			os.Exit(6)
+		} else if messageType == "SOLVED" {
+			//received a solved puzzle solution
+			puzzleInput := messageArr[1]
+			puzzleSol := messageArr[2]
+
+			//1. add solution to the current block
+			s.bl
+			//2. generate new puzzle
+
+			//3. broadcast block
+
+			//4.
 		}
 	}
 }
@@ -203,6 +217,10 @@ func (s *Server) MergeList(receivedRequest Action) {
 	s.TransactionMutex.Unlock()
 }
 
+func (s *Server) SolvePuzzle() {
+
+}
+
 func (s *Server) checkMembershipList() {
 	currTime := time.Now().Unix()
 	//check if any process is MembershipList or failed
@@ -252,7 +270,7 @@ func (s *Server) sendMessageWithUDP(actionType string, ipAddress string, sendAll
 	utils.CheckError(err)
 }
 
-func (s *Server) getTransactSubset() map[string]Transaction {
+func (s *Server) getTransactSubset() map[string]blockchain.Transaction {
 	s.TransactionMutex.Lock()
 	defer s.TransactionMutex.Unlock()
 	var orig []string
@@ -262,7 +280,7 @@ func (s *Server) getTransactSubset() map[string]Transaction {
 	tempArr := utils.Arange(0, len(s.Transactions), 1)
 	shuffledArr := utils.Shuffle(tempArr)
 
-	res := make(map[string]Transaction)
+	res := make(map[string]blockchain.Transaction)
 
 	for _, v := range shuffledArr {
 		if len(res) > s.TransactionCap {
