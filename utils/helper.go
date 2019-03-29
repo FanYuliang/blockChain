@@ -35,6 +35,9 @@ func Concatenate(elem ...interface{}) string {
 		case int:
 			t := strconv.Itoa(v)
 			ipAddress = append(ipAddress, t)
+		case float64:
+			t := fmt.Sprintf("%f",v)
+			ipAddress = append(ipAddress,t)
 		default:
 			fmt.Printf("unexpected type %T", v)
 		}
