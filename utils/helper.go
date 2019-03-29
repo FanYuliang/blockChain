@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"log"
 	"math/rand"
@@ -55,7 +56,6 @@ func CheckError(err error) {
 	}
 }
 
-
 func Shuffle(vals []int) []int {
 	r := rand.New(rand.NewSource(time.Now().Unix()))
 	ret := make([]int, len(vals))
@@ -97,6 +97,7 @@ func GetCurrentIP(debug bool, port int) string {
 		return Concatenate("127.0.0.1:", port)
 	}
 }
+
 func StringAddrToIntArr(addr string) []byte {
 	rawArr := strings.Split(addr, ":")
 	addrArr := strings.Split(rawArr[0], ".")
@@ -111,4 +112,9 @@ func StringAddrToIntArr(addr string) []byte {
 	}
 
 	return res
+}
+
+func GetSHA256(input []byte) [32]byte {
+	sum := sha256.Sum256(input)
+	return sum
 }
