@@ -1,7 +1,9 @@
 package blockchain
 
 type Block struct {
-	Name 	string
-	TxList 	[] Transaction
-	Sol		string
+	Term 			int
+	Timestamp		int64
+	TxList 			[] Transaction
+	Puzzle			string
+	Sol				string
 }

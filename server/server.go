@@ -29,7 +29,7 @@ type Server struct {
 	InitialTimeStamp    int64
 	Bandwidth			float64
 	BandwidthLock		sync.Mutex
-	Block   			blockchain.Block
+	Block   			[] blockchain.Block
 	Transactions        map[string]* blockchain.Transaction
 	TransactionMutex    sync.Mutex
 	MessageReceive 		int
@@ -64,10 +64,16 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string) {
 	entry.InitialTimeStamp = currTimeStamp
 	entry.IpAddress = myIP
 	s.MembershipList.AddNewNode(entry)
-
 	s.MessageReceive = 0
+
+	s.Block = append(s.Block, blockchain.Block{0, 0, [], "", ""})
 }
 
+func (s * Server) AskServiceToSolvePuzzle(serviceConn net.Conn) {
+	//prepare puzzle
+	if s.Block[len(s.Block)-1].Term ==
+
+}
 func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 	for {
 		//parse incoming service server message
@@ -116,11 +122,8 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 			puzzleSol := messageArr[2]
 
 			//1. add solution to the current block
-			s.bl
 			//2. generate new puzzle
-
 			//3. broadcast block
-
 			//4.
 		}
 	}

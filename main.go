@@ -73,16 +73,8 @@ func main() {
 		fmt.Println(utils.Concatenate("Ending server ", name, " at ", myServer.Bandwidth, endTimestamp-startTimestamp))
 		fmt.Println("Received signal from user, about to gracefully terminate the server")
 		myServer.Quit()
-<<<<<<< HEAD
 		log.Printf(utils.Concatenate("Bandwidth ", myServer.Bandwidth/float64(endTimestamp-startTimestamp)))
 		log.Println(utils.Concatenate("Messagereceive ", myServer.MessageReceive))
-=======
-		endtime := time.Now().Unix()
-		fmt.Println("time cost: ",float64(endtime-starttime))
-		nodebandwidth := float64(myServer.Bandwidth)/float64(endtime-starttime)
-		log.Printf(utils.Concatenate("Bandwidth ", nodebandwidth))
-		//log.Println(utils.Concatenate("Messagereceive ", myServer.MessageReceive))
->>>>>>> 5d3d7fec6a0be4a3987aa3a0e2918587a591ec9f
 		os.Exit(5)
 	}()
 
