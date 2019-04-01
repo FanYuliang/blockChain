@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"mp2/config"
+	"mp2/ccmap"
 	"mp2/utils"
 	"mp2/blockchain"
 	"net"
@@ -17,22 +18,21 @@ import (
 )
 
 type Server struct {
-	name                string
-	tDetection          int64
-	tSuspect            int64
-	tFailure            int64
-	pingNum             int
-	TransactionCap      int
-	IntroducerIpAddress string
-	MembershipList      *Membership
-	MyAddress           string
-	InitialTimeStamp    int64
-	Bandwidth			float64
-	BandwidthLock		sync.Mutex
-	Block   			[] blockchain.Block
-	Transactions        map[string]* blockchain.Transaction
-	TransactionMutex    sync.Mutex
-	MessageReceive 		int
+	name                  string
+	tDetection            int64
+	tSuspect              int64
+	tFailure              int64
+	pingNum               int
+	TransactionCap        int
+	IntroducerIpAddress   string
+	MembershipList        *Membership
+	MyAddress             string
+	InitialTimeStamp      int64
+	Bandwidth             float64
+	BandwidthLock         sync.Mutex
+	Block                 [] blockchain.Block
+	UnblockedTransactions *ccmap.BlockchainTransactionMap
+	MessageReceive        int
 }
 
 func (s *Server) Constructor(name string, introducerIP string, myIP string) {
@@ -52,7 +52,7 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string) {
 	s.TransactionCap = myConfig.TransacCap
 	s.tDetection = myConfig.DetectionTimeout
 	s.tSuspect = myConfig.SuspiciousTimeout
-	s.Transactions = make(map[string]*blockchain.Transaction)
+	s.UnblockedTransactions = new(ccmap.BlockchainTransactionMap)
 	s.tFailure = myConfig.FailureTimeout
 	s.pingNum = myConfig.PingNum
 	s.name = name
@@ -70,8 +70,17 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string) {
 }
 
 func (s * Server) AskServiceToSolvePuzzle(serviceConn net.Conn) {
-	//prepare puzzle
-	if s.Block[len(s.Block)-1].Term ==
+
+	var puzzle string
+	prevBlock := s.Block[len(s.Block)-1]
+	//prepare puzzle and current block
+	currBlock := new(blockchain.Block)
+	currBlock.Constructor(prevBlock.Term + 1, s.UnblockedTransactions.GetVals(), puzzle)
+	if prevBlock.Term == 0 {
+		//first block, previous block is none
+		puzzle := utils.Concatenate()
+
+	}
 
 }
 func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
@@ -108,10 +117,8 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 			newTransaction.DNum = dNum
 			newTransaction.SNum = sNum
 			newTransaction.Amount = amount
-			s.TransactionMutex.Lock()
-			s.Transactions[transactionID] = newTransaction
+			s.UnblockedTransactions.Set(transactionID, *newTransaction)
 			log.Println(transactionID, time.Now().UnixNano())
-			s.TransactionMutex.Unlock()
 		} else if messageType == "DIE" {
 			//received a DIE message from service server
 			//fmt.Println("Received a DIE message from service server.")
@@ -136,7 +143,7 @@ func (s *Server) StartPing(duration time.Duration) {
 		s.ping()
 		s.checkMembershipList()
 		s.MembershipList.ListMutex.Unlock()
-		fmt.Println(s.name, " Transaction count: ", len(s.Transactions))
+		fmt.Println(s.name, " Transaction count: ", s.UnblockedTransactions.Size())
 	}
 }
 
@@ -208,16 +215,13 @@ func (s *Server) MergeList(receivedRequest Action) {
 		}
 	}
 
-	s.TransactionMutex.Lock()
 	for id, trans := range receivedRequest.Transactions {
-		_, ok := s.Transactions[id]
-		if !ok {
-			log.Println(id, time.Now().UnixNano())
-			s.Transactions[id] = &trans
-		}
 
+		if !s.UnblockedTransactions.Has(id) {
+			log.Println(id, time.Now().UnixNano())
+			s.UnblockedTransactions.Set(id, trans)
+		}
 	}
-	s.TransactionMutex.Unlock()
 }
 
 func (s *Server) SolvePuzzle() {
@@ -274,13 +278,8 @@ func (s *Server) sendMessageWithUDP(actionType string, ipAddress string, sendAll
 }
 
 func (s *Server) getTransactSubset() map[string]blockchain.Transaction {
-	s.TransactionMutex.Lock()
-	defer s.TransactionMutex.Unlock()
-	var orig []string
-	for k, _ := range s.Transactions {
-		orig = append(orig, k)
-	}
-	tempArr := utils.Arange(0, len(s.Transactions), 1)
+	orig := s.UnblockedTransactions.GetKys()
+	tempArr := utils.Arange(0, s.UnblockedTransactions.Size(), 1)
 	shuffledArr := utils.Shuffle(tempArr)
 
 	res := make(map[string]blockchain.Transaction)
@@ -289,7 +288,7 @@ func (s *Server) getTransactSubset() map[string]blockchain.Transaction {
 		if len(res) > s.TransactionCap {
 			break
 		}
-		res[orig[v]] = *s.Transactions[orig[v]]
+		res[orig[v]] = s.UnblockedTransactions.Get(orig[v])
 	}
 	return res
 }

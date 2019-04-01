@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"mp2/blockchain"
 )
 
 type Action struct {
@@ -9,7 +10,7 @@ type Action struct {
 	Record []Entry
 	InitialTimeStamp int64
 	IpAddress string
-	Transactions map[string]Transaction
+	Transactions map[string]blockchain.Transaction
 }
 
 func (a *Action)  ToBytes() []byte {
