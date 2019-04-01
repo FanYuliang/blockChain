@@ -46,8 +46,7 @@ func main() {
 	serviceAddr := utils.Concatenate(myConfig.ServiceIP, ":", myConfig.ServicePort)
 	myAddr := utils.GetCurrentIP(DEBUG, portNum)
 
-	myServer := new(server.Server)
-	myServer.Constructor(name, "",myAddr)
+
 
 	startTimestamp := time.Now().Second()
 	fmt.Println(utils.Concatenate("Launching server ", name, " at ", myAddr, startTimestamp))
@@ -62,8 +61,10 @@ func main() {
 	iparr := utils.StringAddrToIntArr(myAddr)
 	ServerConn, err := net.ListenUDP("udp", &net.UDPAddr{IP:iparr,Port:portNum,Zone:""})
 	defer ServerConn.Close()
-	starttime := time.Now().Unix()
 
+
+	myServer := new(server.Server)
+	myServer.Constructor(name, "",myAddr, targetConn)
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
@@ -80,7 +81,7 @@ func main() {
 
 	go myServer.TalkWithServiceServer(targetConn)
 	go myServer.StartPing(time.Duration(myConfig.PingPeriod) * time.Second)
-
+	go myServer.AskServiceToSolvePuzzle()
 	//wait for incoming response
 	buf := make([]byte, 1024*1024)
 

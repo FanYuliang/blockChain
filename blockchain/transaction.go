@@ -6,4 +6,9 @@ type Transaction struct {
 	SNum      int
 	DNum      int
 	Amount    int
+	isCommit  bool
+}
+
+func (t *Transaction)  IsCommitted() bool {
+	return  t.isCommit
 }

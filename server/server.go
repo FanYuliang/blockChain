@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"mp2/config"
-	"mp2/ccmap"
-	"mp2/utils"
 	"mp2/blockchain"
+	"mp2/ccmap"
+	"mp2/config"
+	"mp2/utils"
 	"net"
 	"os"
 	"strconv"
@@ -18,24 +18,26 @@ import (
 )
 
 type Server struct {
-	name                  string
-	tDetection            int64
-	tSuspect              int64
-	tFailure              int64
-	pingNum               int
-	TransactionCap        int
-	IntroducerIpAddress   string
-	MembershipList        *Membership
-	MyAddress             string
-	InitialTimeStamp      int64
-	Bandwidth             float64
-	BandwidthLock         sync.Mutex
-	Block                 [] blockchain.Block
-	UnblockedTransactions *ccmap.BlockchainTransactionMap
-	MessageReceive        int
+	Name                string
+	tDetection          int64
+	tSuspect            int64
+	tFailure            int64
+	pingNum             int
+	TransactionCap      int
+	IntroducerIpAddress string
+	MembershipList      *Membership
+	MyAddress           string
+	InitialTimeStamp    int64
+	Bandwidth           float64
+	BandwidthLock       sync.Mutex
+	Block               [] blockchain.Block
+	CurrBlock 			blockchain.Block
+	Transactions        *ccmap.BlockchainTransactionMap
+	MessageReceive      int
+	ServiceConn         net.Conn
 }
 
-func (s *Server) Constructor(name string, introducerIP string, myIP string) {
+func (s *Server) Constructor(name string, introducerIP string, myIP string, serviceConn net.Conn) {
 
 	file, err := os.Open("config/config.json")
 	utils.CheckError(err)
@@ -46,16 +48,17 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string) {
 
 	currTimeStamp := time.Now().Unix()
 	s.MembershipList = new(Membership)
+	s.ServiceConn = serviceConn
 	s.MyAddress = myIP
 	s.IntroducerIpAddress = introducerIP
 	s.InitialTimeStamp = currTimeStamp
 	s.TransactionCap = myConfig.TransacCap
 	s.tDetection = myConfig.DetectionTimeout
 	s.tSuspect = myConfig.SuspiciousTimeout
-	s.UnblockedTransactions = new(ccmap.BlockchainTransactionMap)
+	s.Transactions = new(ccmap.BlockchainTransactionMap)
 	s.tFailure = myConfig.FailureTimeout
 	s.pingNum = myConfig.PingNum
-	s.name = name
+	s.Name = name
 	var entry Entry
 	entry.Name = name
 	entry.lastUpdatedTime = 0
@@ -66,23 +69,37 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string) {
 	s.MembershipList.AddNewNode(entry)
 	s.MessageReceive = 0
 
-	s.Block = append(s.Block, blockchain.Block{0, 0, [], "", ""})
+	firstBlock := new(blockchain.Block)
+	firstBlock.Constructor(0, [] blockchain.Transaction{},  "")
+	s.Block = append(s.Block, *firstBlock)
 }
 
-func (s * Server) AskServiceToSolvePuzzle(serviceConn net.Conn) {
+func (s * Server) AskServiceToSolvePuzzle() {
+	time.Sleep(10 *time.Second)
+	for {
+		time.Sleep(10 * time.Second)
+		fmt.Println("Ask service to solve new puzzle")
+		prevBlock := s.Block[len(s.Block)-1]
+		//prepare puzzle and current block
+		s.CurrBlock = blockchain.Block{}
+		uncommitedTransRaw := s.Transactions.GetUncommittedValsForNext(100)
+		uncommitedTrans := []blockchain.Transaction{}
+		for _, v := range uncommitedTransRaw {
+			uncommitedTrans = append(uncommitedTrans, *v)
+		}
+		s.CurrBlock.Constructor(prevBlock.Term + 1, uncommitedTrans, "")
+		prevRef := utils.Concatenate(prevBlock.Term, int(prevBlock.Timestamp))
+		currPuzzleHolder := new(blockchain.Puzzle)
+		currPuzzleHolder.Constructor(prevRef, s.CurrBlock.TxList)
 
-	var puzzle string
-	prevBlock := s.Block[len(s.Block)-1]
-	//prepare puzzle and current block
-	currBlock := new(blockchain.Block)
-	currBlock.Constructor(prevBlock.Term + 1, s.UnblockedTransactions.GetVals(), puzzle)
-	if prevBlock.Term == 0 {
-		//first block, previous block is none
-		puzzle := utils.Concatenate()
 
+		puzzleToSend := utils.GetSHA256(currPuzzleHolder.ToBytes())
+		s.CurrBlock.Puzzle = puzzleToSend
+		_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("SOLVE ", puzzleToSend, "\n"))
+		utils.CheckError(err)
 	}
-
 }
+
 func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 	for {
 		//parse incoming service server message
@@ -117,7 +134,7 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 			newTransaction.DNum = dNum
 			newTransaction.SNum = sNum
 			newTransaction.Amount = amount
-			s.UnblockedTransactions.Set(transactionID, *newTransaction)
+			s.Transactions.Set(transactionID, newTransaction)
 			log.Println(transactionID, time.Now().UnixNano())
 		} else if messageType == "DIE" {
 			//received a DIE message from service server
@@ -127,8 +144,11 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 			//received a solved puzzle solution
 			puzzleInput := messageArr[1]
 			puzzleSol := messageArr[2]
-
+			fmt.Println("puzzleInput: ", puzzleInput)
+			fmt.Println("puzzleSol: ", puzzleSol)
 			//1. add solution to the current block
+			s.CurrBlock.Sol = puzzleSol
+
 			//2. generate new puzzle
 			//3. broadcast block
 			//4.
@@ -143,7 +163,7 @@ func (s *Server) StartPing(duration time.Duration) {
 		s.ping()
 		s.checkMembershipList()
 		s.MembershipList.ListMutex.Unlock()
-		fmt.Println(s.name, " Transaction count: ", s.UnblockedTransactions.Size())
+		fmt.Println(s.Name, " Transaction count: ", s.Transactions.Size())
 	}
 }
 
@@ -217,9 +237,9 @@ func (s *Server) MergeList(receivedRequest Action) {
 
 	for id, trans := range receivedRequest.Transactions {
 
-		if !s.UnblockedTransactions.Has(id) {
+		if !s.Transactions.Has(id) {
 			log.Println(id, time.Now().UnixNano())
-			s.UnblockedTransactions.Set(id, trans)
+			s.Transactions.Set(id, &trans)
 		}
 	}
 }
@@ -278,8 +298,8 @@ func (s *Server) sendMessageWithUDP(actionType string, ipAddress string, sendAll
 }
 
 func (s *Server) getTransactSubset() map[string]blockchain.Transaction {
-	orig := s.UnblockedTransactions.GetKys()
-	tempArr := utils.Arange(0, s.UnblockedTransactions.Size(), 1)
+	orig := s.Transactions.GetKys()
+	tempArr := utils.Arange(0, s.Transactions.Size(), 1)
 	shuffledArr := utils.Shuffle(tempArr)
 
 	res := make(map[string]blockchain.Transaction)
@@ -288,7 +308,7 @@ func (s *Server) getTransactSubset() map[string]blockchain.Transaction {
 		if len(res) > s.TransactionCap {
 			break
 		}
-		res[orig[v]] = s.UnblockedTransactions.Get(orig[v])
+		res[orig[v]] = *s.Transactions.Get(orig[v])
 	}
 	return res
 }

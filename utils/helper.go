@@ -2,6 +2,7 @@ package utils
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"math/rand"
@@ -114,7 +115,10 @@ func StringAddrToIntArr(addr string) []byte {
 	return res
 }
 
-func GetSHA256(input []byte) [32]byte {
-	sum := sha256.Sum256(input)
-	return sum
+func GetSHA256(input []byte) string {
+	hash := sha256.New()
+	hash.Write(input)
+	md := hash.Sum(nil)
+	mdStr := hex.EncodeToString(md)
+	return mdStr
 }

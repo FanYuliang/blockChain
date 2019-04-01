@@ -6,6 +6,7 @@ package ccmap
 
 import (
 	"mp2/blockchain"
+	"sort"
 	"sync"
 )
 
@@ -13,16 +14,16 @@ import (
 
 // BlockchainTransactionDictionary the set of Items
 type BlockchainTransactionMap struct {
-	items map[string]blockchain.Transaction
+	items map[string]*blockchain.Transaction
 	lock  sync.RWMutex
 }
 
 // Set adds a new item to the ccmap
-func (d *BlockchainTransactionMap) Set(k string, v blockchain.Transaction) {
+func (d *BlockchainTransactionMap) Set(k string, v *blockchain.Transaction) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	if d.items == nil {
-		d.items = make(map[string]blockchain.Transaction)
+		d.items = make(map[string]*blockchain.Transaction)
 	}
 	d.items[k] = v
 }
@@ -38,6 +39,7 @@ func (d *BlockchainTransactionMap) Delete(k string) bool {
 	return ok
 }
 
+
 // Has returns true if the key exists in the ccmap
 func (d *BlockchainTransactionMap) Has(k string) bool {
 	d.lock.RLock()
@@ -47,7 +49,7 @@ func (d *BlockchainTransactionMap) Has(k string) bool {
 }
 
 // Get returns the value associated with the key
-func (d *BlockchainTransactionMap) Get(k string) blockchain.Transaction {
+func (d *BlockchainTransactionMap) Get(k string) *blockchain.Transaction {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	return d.items[k]
@@ -57,7 +59,7 @@ func (d *BlockchainTransactionMap) Get(k string) blockchain.Transaction {
 func (d *BlockchainTransactionMap) Clear() {
 	d.lock.Lock()
 	defer d.lock.Unlock()
-	d.items = make(map[string]blockchain.Transaction)
+	d.items = make(map[string]*blockchain.Transaction)
 }
 
 // Size returns the amount of elements in the ccmap
@@ -79,12 +81,31 @@ func (d *BlockchainTransactionMap) GetKys() []string {
 }
 
 // BlockchainTransactions returns a slice of all the values present
-func (d *BlockchainTransactionMap) GetVals() []blockchain.Transaction {
+func (d *BlockchainTransactionMap) GetVals() []*blockchain.Transaction {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
-	values := []blockchain.Transaction{}
+	values := []*blockchain.Transaction{}
 	for i := range d.items {
 		values = append(values, d.items[i])
 	}
+	return values
+}
+
+func (d *BlockchainTransactionMap) GetUncommittedValsForNext(num int) []*blockchain.Transaction {
+	keys := d.GetKys()
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+	sort.Strings(keys)
+
+	values := []*blockchain.Transaction{}
+
+	count := 0
+	for _, k := range keys {
+		if count < num && !d.items[k].IsCommitted() {
+			values = append(values, d.items[k])
+			count += 1
+		}
+	}
+
 	return values
 }
