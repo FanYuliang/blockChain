@@ -127,10 +127,10 @@ func (s *Server) MergeList(receivedRequest endpoints.FailureDetectionMeta) {
 }
 
 func (s * Server)MergeTransactionList(receivedRequest endpoints.TransactionMeta) {
-	for id, trans := range receivedRequest.Tx {
-		if !s.Transactions.Has(id) {
-			log.Println(id, time.Now().UnixNano())
-			s.Transactions.Append(trans)
+	for _, tx := range receivedRequest.Tx {
+		if !s.Transactions.Has(tx.ID) {
+			log.Println(tx.ID, time.Now().UnixNano())
+			s.Transactions.Append(tx)
 		}
 	}
 }

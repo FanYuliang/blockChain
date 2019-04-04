@@ -18,6 +18,7 @@ func (t *Tree)Constructor(){
 
 
 func (t *Tree)InsertBlock(b Block){
+
 	for i,elem := range(t.Leaf){
 		if elem.ID == b.PreviousBlockID{
 			t.Leaf[i] = b
@@ -29,5 +30,5 @@ func (t *Tree)InsertBlock(b Block){
 }
 
 func (t* Tree)GetPreviousBlockID()Block{
-
+	return Block{}
 }
