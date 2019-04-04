@@ -24,3 +24,5 @@ func (s *Server) getTransactionEndpointMetadata() endpoints.TransactionMeta {
 	tEndpoint := endpoints.TransactionMeta{transactionToSend}
 	return tEndpoint
 }
+
+func (s* Server) get

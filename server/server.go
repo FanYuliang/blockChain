@@ -36,6 +36,7 @@ type Server struct {
 	Transactions        *cclist.TransactionList
 	MessageReceive      int
 	ServiceConn         net.Conn
+	BlockChain 			blockchain.Tree
 }
 
 func (s *Server) Constructor(name string, introducerIP string, myIP string, serviceConn net.Conn) {
@@ -69,6 +70,7 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string, serv
 	entry.IpAddress = myIP
 	s.MembershipList.AddNewNode(entry)
 	s.MessageReceive = 0
+	s.BlockChain.Constructor()
 }
 
 func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
@@ -120,6 +122,8 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 			} else if endpointType == "Transaction" {
 
 			} else if endpointType == "Block" {
+
+			}else if endpointType == "REndpoint"{
 
 			}
 		}

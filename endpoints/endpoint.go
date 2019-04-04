@@ -53,7 +53,10 @@ func (e *Endpoint)SetEndpointType(endpointTypes ...string) {
 			e.Types = append(e.Types, 1)
 		} else if endpointType == "Block" {
 			e.Types = append(e.Types, 2)
-		} else {
+		} else if endpointType == "REndpoint"{
+			e.Types = append(e.Types,3)
+		}
+		else {
 			log.Fatal("Bad endpoint type!")
 			os.Exit(12)
 		}
@@ -69,6 +72,8 @@ func (e *Endpoint)GetEndpointTypes() []string {
 			res = append(res, "Transaction")
 		} else if endpointType == 2 {
 			res = append(res, "Block")
+		} else if endpointType == 3{
+			res = append(res, "REndpoint")
 		}
 	}
 	return  res
