@@ -13,12 +13,12 @@ type Endpoint struct {
 	FEndpoint FailureDetectionMeta
 	TEndpoint TransactionMeta
 	BEndpoint BlockMeta
-	REndpoint RequestMissingMeta
+	REndpoint RequestMissingTransactionMeta
 }
 
-type RequestMissingMeta struct{
-	Type 			int
-
+type RequestMissingTransactionMeta struct{
+	Type 			int // 0 receive, 1 reply
+	RequesterIPaddr string
 }
 
 type FailureDetectionMeta struct {
@@ -53,7 +53,7 @@ func (e *Endpoint)SetEndpointType(endpointTypes ...string) {
 			e.Types = append(e.Types, 1)
 		} else if endpointType == "Block" {
 			e.Types = append(e.Types, 2)
-		} else if endpointType == "REndpoint"{
+		} else if endpointType == "RequestMissingTransaction"{
 			e.Types = append(e.Types,3)
 		} else {
 			log.Fatal("Bad endpoint type!")
@@ -72,7 +72,7 @@ func (e *Endpoint)GetEndpointTypes() []string {
 		} else if endpointType == 2 {
 			res = append(res, "Block")
 		} else if endpointType == 3{
-			res = append(res, "REndpoint")
+			res = append(res, "RequestMissingTransaction")
 		}
 	}
 	return  res

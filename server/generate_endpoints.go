@@ -25,4 +25,6 @@ func (s *Server) getTransactionEndpointMetadata() endpoints.TransactionMeta {
 	return tEndpoint
 }
 
-func (s* Server) get
+func (s* Server) getRequestMissingTransactionMeta() endpoints.RequestMissingTransactionMeta{
+
+}
