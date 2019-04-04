@@ -10,9 +10,7 @@ import (
 func (s * Server) AskServiceToSolvePuzzle() {
 	time.Sleep(10 * time.Second)
 	fmt.Println("Ask service to solve new puzzle")
-	if s.CurrBlock.IsReady {
-		fmt.Println("This shouldn't happen: ready current block is about to be deleted.")
-	}
+
 	prevBlock := s.Block[len(s.Block)-1]
 	//prepare puzzle and current block
 	s.CurrBlock = blockchain.Block{}

@@ -32,7 +32,6 @@ type Server struct {
 	InitialTimeStamp    int64
 	Bandwidth           float64
 	BandwidthLock       sync.Mutex
-	Block               [] blockchain.Block
 	CurrBlock 			blockchain.Block
 	Transactions        *cclist.TransactionList
 	MessageReceive      int
@@ -70,10 +69,6 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string, serv
 	entry.IpAddress = myIP
 	s.MembershipList.AddNewNode(entry)
 	s.MessageReceive = 0
-
-	firstBlock := new(blockchain.Block)
-	firstBlock.Constructor(0, [] blockchain.Transaction{},  "")
-	s.Block = append(s.Block, *firstBlock)
 }
 
 func (s *Server) NodeInterCommunication(ServerConn net.Conn) {

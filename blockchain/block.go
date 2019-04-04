@@ -2,22 +2,22 @@ package blockchain
 
 import (
 	"encoding/json"
+	"mp2/utils"
 	"time"
 )
 
 type Block struct {
-	Term 			int
-	Timestamp		int64
+	ID 				string
+	PrevBlockID		string
 	TxList 			[] Transaction
 	Sol				string
+	balance 		map[string]int
+	term	  		int
 }
 
-
-func (b *Block)  Constructor(term int, txList [] Transaction)  {
-	b.Term = term
-	b.Timestamp = time.Now().Unix()
+func (b *Block)  Constructor(txList [] Transaction)  {
+	b.ID = utils.Concatenate(int(time.Now().Unix()))
 	b.TxList = txList
-	b.Sol = ""
 }
 
 func (b *Block)  ToBytes() []byte {

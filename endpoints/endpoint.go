@@ -2,8 +2,10 @@ package endpoints
 
 import (
 	"encoding/json"
+	"log"
 	"mp2/blockchain"
 	"mp2/node_membership"
+	"os"
 )
 
 type Endpoint struct {
@@ -36,7 +38,7 @@ func (e *Endpoint)  ToBytes() []byte {
 	return res
 }
 
-func (e *Endpoint)SetEndpointType(endpointTypes ...string{}) {
+func (e *Endpoint)SetEndpointType(endpointTypes ...string) {
 	e.Types = make([] int, 1)
 	for _, endpointType := range endpointTypes {
 		if endpointType == "FailureDetection" {

@@ -13,13 +13,13 @@ import (
 // cat generic_ccmap.go | genny gen "String=string BlockchainTransaction=*blockchain.Transaction" > [targetName].go
 
 // BlockchainTransactionDictionary the set of Items
-type BlockchainTransactionMap struct {
+type TransactionMap struct {
 	items map[string]*blockchain.Transaction
 	lock  sync.RWMutex
 }
 
 // Set adds a new item to the ccmap
-func (d *BlockchainTransactionMap) Set(k string, v *blockchain.Transaction) {
+func (d *TransactionMap) Set(k string, v *blockchain.Transaction) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	if d.items == nil {
@@ -29,7 +29,7 @@ func (d *BlockchainTransactionMap) Set(k string, v *blockchain.Transaction) {
 }
 
 // Delete removes a value from the ccmap, given its key
-func (d *BlockchainTransactionMap) Delete(k string) bool {
+func (d *TransactionMap) Delete(k string) bool {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	_, ok := d.items[k]
@@ -41,7 +41,7 @@ func (d *BlockchainTransactionMap) Delete(k string) bool {
 
 
 // Has returns true if the key exists in the ccmap
-func (d *BlockchainTransactionMap) Has(k string) bool {
+func (d *TransactionMap) Has(k string) bool {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	_, ok := d.items[k]
@@ -49,28 +49,28 @@ func (d *BlockchainTransactionMap) Has(k string) bool {
 }
 
 // Get returns the value associated with the key
-func (d *BlockchainTransactionMap) Get(k string) *blockchain.Transaction {
+func (d *TransactionMap) Get(k string) *blockchain.Transaction {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	return d.items[k]
 }
 
 // Clear removes all the items from the ccmap
-func (d *BlockchainTransactionMap) Clear() {
+func (d *TransactionMap) Clear() {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	d.items = make(map[string]*blockchain.Transaction)
 }
 
 // Size returns the amount of elements in the ccmap
-func (d *BlockchainTransactionMap) Size() int {
+func (d *TransactionMap) Size() int {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	return len(d.items)
 }
 
 // Strings returns a slice of all the keys present
-func (d *BlockchainTransactionMap) GetKys() []string {
+func (d *TransactionMap) GetKys() []string {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	keys := []string{}
@@ -81,7 +81,7 @@ func (d *BlockchainTransactionMap) GetKys() []string {
 }
 
 // BlockchainTransactions returns a slice of all the values present
-func (d *BlockchainTransactionMap) GetVals() []*blockchain.Transaction {
+func (d *TransactionMap) GetVals() []*blockchain.Transaction {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	values := []*blockchain.Transaction{}
@@ -91,7 +91,7 @@ func (d *BlockchainTransactionMap) GetVals() []*blockchain.Transaction {
 	return values
 }
 
-func (d *BlockchainTransactionMap) GetUncommittedValsForNext(num int) []*blockchain.Transaction {
+func (d *TransactionMap) GetUncommittedValsForNext(num int) []*blockchain.Transaction {
 	keys := d.GetKys()
 	d.lock.RLock()
 	defer d.lock.RUnlock()
