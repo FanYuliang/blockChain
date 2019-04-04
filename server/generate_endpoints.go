@@ -10,11 +10,11 @@ func (s *Server) getFailureDetectionEndpointMetadata(ActionType string) endpoint
 	}
 	listToSend := s.getMemebershipSubset(num)
 
-	fEndpoint := endpoints.FailureDetectionMeta{
-		endpoints.EncodeFailureDetectionActionType(ActionType),
-		listToSend,
-		s.InitialTimeStamp,
-		s.MyAddress}
+	var fEndpoint endpoints.FailureDetectionMeta
+	fEndpoint.Type = fEndpoint.EncodeFailureDetectionActionType(ActionType)
+	fEndpoint.Record = listToSend
+	fEndpoint.InitialTimeStamp = s.InitialTimeStamp
+	fEndpoint.IpAddress = s.MyAddress
 	return fEndpoint
 }
 
