@@ -9,6 +9,18 @@ import (
 	"time"
 )
 
+
+func (s *Server) StartPing(duration time.Duration) {
+	for {
+		time.Sleep(duration)
+		s.MembershipList.ListMutex.Lock()
+		s.ping()
+		s.checkMembershipList()
+		s.MembershipList.ListMutex.Unlock()
+		fmt.Println(s.Name, " Transaction count: ", s.Transactions.Size())
+	}
+}
+
 /*
 	This function should ping to num processes. And at the same time, it should disseminate entries stored in the disseminateList
 */
@@ -32,7 +44,11 @@ func (s *Server) ping() {
 		}
 		ipAddress := s.MembershipList.List[index].IpAddress
 
-		s.sendMessageWithUDP("Ping", ipAddress)
+		var endpoint endpoints.Endpoint
+		endpoint.TEndpoint = s.getTransactionEndpointMetadata()
+		endpoint.FEndpoint = s.getFailureDetectionEndpointMetadata("Ping")
+		endpoint.Types = [] string {"FailureDetectionMeta", "TransactionMeta"}
+		s.sendMessageWithUDP(endpoint, ipAddress)
 		s.MembershipList.List[index].LastUpdatedTime = time.Now().Unix()
 	}
 
@@ -61,28 +77,43 @@ func (s *Server) getPingTargets() []int {
 */
 func (s *Server) Ack(ipAddress string) {
 	//fmt.Println("Sending ack")
-	s.sendMessageWithUDP("Ack", ipAddress)
+	var endpoint endpoints.Endpoint
+	endpoint.TEndpoint = s.getTransactionEndpointMetadata()
+	endpoint.FEndpoint = s.getFailureDetectionEndpointMetadata("Ack")
+	endpoint.Types = [] string {"FailureDetectionMeta", "TransactionMeta"}
+	s.sendMessageWithUDP(endpoint, ipAddress)
 }
 
 /*
 	This function invoke when it attempts to connect with the introducer node. If success, it should update its membership list
 */
-func (s *Server) Join(introducerIPAddress string) {
+func (s *Server) Join(ipAddress string) {
 	//fmt.Println("Sending join request to ", introducerIPAddress)
-	s.sendMessageWithUDP("Join", introducerIPAddress)
+	var endpoint endpoints.Endpoint
+	endpoint.TEndpoint = s.getTransactionEndpointMetadata()
+	endpoint.FEndpoint = s.getFailureDetectionEndpointMetadata("Join")
+	endpoint.Types = [] string {"FailureDetectionMeta", "TransactionMeta"}
+	s.sendMessageWithUDP(endpoint, ipAddress)
 }
 
 /*
 	This function invoke when it quits the group
 */
 func (s *Server) Quit() {
-	fmt.Println("Sending QUIT request")
+	fmt.Println("Sending Quit request")
 	s.MembershipList.UpdateNode2(s.MyAddress, 2, 0)
 	for _, entry := range s.MembershipList.List {
 		s.MembershipList.ListMutex.Lock()
 		ipAddress := entry.IpAddress
 		s.MembershipList.ListMutex.Unlock()
-		s.sendMessageWithUDP("QUIT", ipAddress)
+
+
+		var endpoint endpoints.Endpoint
+		endpoint.TEndpoint = s.getTransactionEndpointMetadata()
+		endpoint.FEndpoint = s.getFailureDetectionEndpointMetadata("Quit")
+		endpoint.Types = [] string {"FailureDetectionMeta", "TransactionMeta"}
+		s.sendMessageWithUDP(endpoint, ipAddress)
+
 	}
 }
 

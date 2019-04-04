@@ -43,7 +43,7 @@ func EncodeEndpointType(endpointType string) int {
 		return 1
 	} else if endpointType == "Ack" {
 		return 2
-	} else if endpointType == "QUIT" {
+	} else if endpointType == "Quit" {
 		return 3
 	} else if endpointType == "New Block" {
 		return 4

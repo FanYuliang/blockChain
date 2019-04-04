@@ -76,33 +76,56 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string, serv
 	s.Block = append(s.Block, *firstBlock)
 }
 
-func (s * Server) AskServiceToSolvePuzzle() {
-	time.Sleep(10 * time.Second)
-	fmt.Println("Ask service to solve new puzzle")
-	if s.CurrBlock.IsReady {
-		fmt.Println("This shouldn't happen: ready current block is about to be deleted.")
+func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
+	//wait for incoming response
+	buf := make([]byte, 1024*1024)
+
+	for {
+		n, _ := ServerConn.Read(buf)
+		var resultMap endpoints.FailureDetectionMeta
+		// parse resultMap to json format
+		err := json.Unmarshal(buf[0:n], &resultMap)
+		utils.CheckError(err)
+
+		//log.Println("Data received:", resultMap.Record)
+
+		//Customize different action
+		if resultMap.Type == 0 {
+			//received join
+			//fmt.Println("Received Join from ", resultMap.IpAddress)
+			s.MergeList(resultMap)
+			s.Ack(resultMap.IpAddress)
+		} else if resultMap.Type == 1 {
+			//received ping
+			//fmt.Println("Received Ping from ", resultMap.IpAddress)
+			s.MergeList(resultMap)
+			s.Ack(resultMap.IpAddress)
+		} else if resultMap.Type == 2 {
+			//received ack
+			//fmt.Println("Received Ack from ", resultMap.IpAddress)
+			for _, entry := range s.MembershipList.List {
+				if entry.InitialTimeStamp == resultMap.InitialTimeStamp && entry.IpAddress == resultMap.IpAddress {
+					s.MembershipList.UpdateNode2(resultMap.IpAddress, 0, 0)
+					break
+				}
+			}
+			s.MergeList(resultMap)
+			//log.Println("After merging, server's membership list", myServer.MembershipList.List)
+		} else if resultMap.Type == 3 {
+			//fmt.Println("Received Quit from ", resultMap.IpAddress)
+			//received leave
+			//s.MembershipList.RemoveNode(incomingIP)
+			s.MergeList(resultMap)
+		} else if resultMap.Type == 4 {
+			//received new block
+
+			//verify
+			//myServer.VerifyPuzzleSolution(resultMap.Block)
+		}
 	}
-	prevBlock := s.Block[len(s.Block)-1]
-	//prepare puzzle and current block
-	s.CurrBlock = blockchain.Block{}
-	transactionToCommit := s.Transactions.Pop(100)
-	s.CurrBlock.Constructor(prevBlock.Term + 1, transactionToCommit, "")
-	prevRef := utils.Concatenate(prevBlock.Term, int(prevBlock.Timestamp))
-	currPuzzleHolder := new(blockchain.Puzzle)
-	currPuzzleHolder.Constructor(prevRef, s.CurrBlock.TxList)
-
-	puzzleToSend := utils.GetSHA256(currPuzzleHolder.ToBytes())
-	s.CurrBlock.Puzzle = puzzleToSend
-	_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("SOLVE ", puzzleToSend, "\n"))
-	utils.CheckError(err)
 }
 
-func (s *Server) VerifyPuzzleSolution(block blockchain.Block) {
-	_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("VERIFY ", block.Puzzle, " ", block.Sol, "\n"))
-	utils.CheckError(err)
-}
-
-func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
+func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 	for {
 		//parse incoming service server message
 		message, _ := bufio.NewReader(serviceConn).ReadString('\n')
@@ -136,8 +159,8 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 			newTransaction.DNum = dNum
 			newTransaction.SNum = sNum
 			newTransaction.Amount = amount
-			//TODO: to add transaction through ISIS algorithm
-			//s.Transactions.Set(transactionID, newTransaction)
+
+			s.Transactions.Append(*newTransaction)
 			log.Println(transactionID, time.Now().UnixNano())
 		} else if messageType == "DIE" {
 			//received a DIE message from service server
@@ -165,39 +188,24 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 	}
 }
 
-func (s *Server) StartPing(duration time.Duration) {
-	for {
-		time.Sleep(duration)
-		s.MembershipList.ListMutex.Lock()
-		s.ping()
-		s.checkMembershipList()
-		s.MembershipList.ListMutex.Unlock()
-		fmt.Println(s.Name, " Transaction count: ", s.Transactions.Size())
-	}
-}
+
+func (s *Server) sendMessageWithUDP(endpoint endpoints.Endpoint, ipAddress string) {
+	//fmt.Println("ipAddress: ", ipAddress)
+	arr := strings.Split(ipAddress, ":")
+
+	myPort, err := strconv.Atoi(arr[1])
+	utils.CheckError(err)
+
+	iparr := utils.StringAddrToIntArr(ipAddress)
+	Conn, err := net.DialUDP("udp", nil, &net.UDPAddr{IP: iparr, Port: myPort, Zone: ""})
+	utils.CheckError(err)
+	defer Conn.Close()
 
 
-
-func (s *Server) SolvePuzzle() {
-
-}
-
-func (s *Server) getTransactSubset() [] blockchain.Transaction {
-	/*
-	orig := s.Transactions.GetKys()
-	tempArr := utils.Arange(0, s.Transactions.Size(), 1)
-	shuffledArr := utils.Shuffle(tempArr)
-
-	res := make(map[string]blockchain.Transaction)
-
-	for _, v := range shuffledArr {
-		if len(res) > s.TransactionCap {
-			break
-		}
-		res[orig[v]] = *s.Transactions.Get(orig[v])
-	}
-	return res
-	*/
-	var txList [] blockchain.Transaction
-	return txList
+	//fmt.Println("endpoint: ", endpoint)
+	n, err := Conn.Write(endpoint.ToBytes())
+	s.BandwidthLock.Lock()
+	s.Bandwidth += float64(int(n)/1024)
+	s.BandwidthLock.Unlock()
+	utils.CheckError(err)
 }

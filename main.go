@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"mp2/config"
-	"mp2/endpoints"
 	"mp2/server"
 	"mp2/utils"
 	"net"
@@ -75,59 +74,14 @@ func main() {
 		fmt.Println(utils.Concatenate("Ending server ", name, " at ", myServer.Bandwidth, endTimestamp-startTimestamp))
 		fmt.Println("Received signal from user, about to gracefully terminate the server")
 		myServer.Quit()
-		log.Printf(utils.Concatenate("Bandwidth ", myServer.Bandwidth/float64(endTimestamp-startTimestamp)))
-		log.Println(utils.Concatenate("Messagereceive ", myServer.MessageReceive))
+		log.Printf(utils.Concatenate("Bandwidth: ", myServer.Bandwidth/float64(endTimestamp-startTimestamp)))
+		log.Println(utils.Concatenate("Message received: ", myServer.MessageReceive))
 		os.Exit(5)
 	}()
 
-	go myServer.TalkWithServiceServer(targetConn)
+	go myServer.ServiceServerCommunication(targetConn)
 	go myServer.StartPing(time.Duration(myConfig.PingPeriod) * time.Second)
 	go myServer.AskServiceToSolvePuzzle()
-	//wait for incoming response
-	buf := make([]byte, 1024*1024)
 
-	for {
-		n, _ := ServerConn.Read(buf)
-		var resultMap endpoints.FailureDetectionMeta
-		// parse resultMap to json format
-		err = json.Unmarshal(buf[0:n], &resultMap)
-		utils.CheckError(err)
-
-		//log.Println("Data received:", resultMap.Record)
-
-		//Customize different action
-		if resultMap.Type == 0 {
-			//received join
-			//fmt.Println("Received Join from ", resultMap.IpAddress)
-			myServer.MergeList(resultMap)
-			myServer.Ack(resultMap.IpAddress)
-		} else if resultMap.Type == 1 {
-			//received ping
-			//fmt.Println("Received Ping from ", resultMap.IpAddress)
-			myServer.MergeList(resultMap)
-			myServer.Ack(resultMap.IpAddress)
-		} else if resultMap.Type == 2 {
-			//received ack
-			//fmt.Println("Received Ack from ", resultMap.IpAddress)
-			for _, entry := range myServer.MembershipList.List {
-				if entry.InitialTimeStamp == resultMap.InitialTimeStamp && entry.IpAddress == resultMap.IpAddress {
-					myServer.MembershipList.UpdateNode2(resultMap.IpAddress, 0, 0)
-					break
-				}
-			}
-			myServer.MergeList(resultMap)
-			//log.Println("After merging, server's membership list", myServer.MembershipList.List)
-		} else if resultMap.Type == 3 {
-			//fmt.Println("Received QUIT from ", resultMap.IpAddress)
-			//received leave
-			//s.MembershipList.RemoveNode(incomingIP)
-			myServer.MergeList(resultMap)
-		} else if resultMap.Type == 4 {
-			//received new block
-
-			//verify
-			myServer.VerifyPuzzleSolution(resultMap.Block)
-		}
-
-	}
+	myServer.NodeInterCommunication(ServerConn)
 }
