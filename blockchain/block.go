@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"encoding/json"
+	"math/rand"
 	"mp2/utils"
 	"time"
 )
@@ -16,7 +17,7 @@ type Block struct {
 }
 
 func (b *Block)  Constructor(txList [] Transaction)  {
-	b.ID = utils.Concatenate(int(time.Now().Unix()))
+	b.ID = utils.Concatenate(rand.Intn(1000000), int(time.Now().Unix()))
 	b.TxList = txList
 }
 

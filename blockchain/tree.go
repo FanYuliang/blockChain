@@ -25,7 +25,7 @@ func (t *Tree)InsertBlock(b Block){
 			return
 		}
 	}
-	RequestBlock()
+	//RequestBlock()
 
 }
 
