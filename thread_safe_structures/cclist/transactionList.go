@@ -47,3 +47,8 @@ func (d *TransactionList) Size() int {
 	defer d.lock.RUnlock()
 	return len(d.items)
 }
+
+func (d *TransactionList) Has(transactionID string) bool {
+
+	return
+}

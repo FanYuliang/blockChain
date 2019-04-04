@@ -11,7 +11,7 @@ func (s *Server) getFailureDetectionEndpointMetadata(ActionType string) endpoint
 	listToSend := s.getMemebershipSubset(num)
 
 	fEndpoint := endpoints.FailureDetectionMeta{
-		endpoints.EncodeEndpointType(ActionType),
+		endpoints.EncodeFailureDetectionActionType(ActionType),
 		listToSend,
 		s.InitialTimeStamp,
 		s.MyAddress}

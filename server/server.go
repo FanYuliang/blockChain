@@ -64,7 +64,7 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string, serv
 	var entry node_membership.Entry
 	entry.Name = name
 	entry.LastUpdatedTime = 0
-	entry.EntryType = endpoints.EncodeEndpointType("alive")
+	entry.EntryType = endpoints.EncodeFailureDetectionActionType("alive")
 	entry.Incarnation = 0
 	entry.InitialTimeStamp = currTimeStamp
 	entry.IpAddress = myIP
@@ -77,51 +77,63 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string, serv
 }
 
 func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
-	//wait for incoming response
+
 	buf := make([]byte, 1024*1024)
 
 	for {
+		//wait for incoming response
 		n, _ := ServerConn.Read(buf)
-		var resultMap endpoints.FailureDetectionMeta
+
+		var endpoint endpoints.Endpoint
 		// parse resultMap to json format
-		err := json.Unmarshal(buf[0:n], &resultMap)
+		err := json.Unmarshal(buf[0:n], &endpoint)
 		utils.CheckError(err)
 
 		//log.Println("Data received:", resultMap.Record)
+		for _, endpointType := range endpoint.GetEndpointTypes() {
+			if endpointType == "FailureDetection" {
+				//Customize different action
+				resultMap := endpoint.FEndpoint
+				if resultMap.Type == 0 {
+					//received join
+					//fmt.Println("Received Join from ", resultMap.IpAddress)
+					s.MergeList(resultMap)
+					s.Ack(resultMap.IpAddress)
+				} else if resultMap.Type == 1 {
+					//received ping
+					//fmt.Println("Received Ping from ", resultMap.IpAddress)
+					s.MergeList(resultMap)
+					s.Ack(resultMap.IpAddress)
+				} else if resultMap.Type == 2 {
+					//received ack
+					//fmt.Println("Received Ack from ", resultMap.IpAddress)
+					for _, entry := range s.MembershipList.List {
+						if entry.InitialTimeStamp == resultMap.InitialTimeStamp && entry.IpAddress == resultMap.IpAddress {
+							s.MembershipList.UpdateNode2(resultMap.IpAddress, 0, 0)
+							break
+						}
+					}
+					s.MergeList(resultMap)
+					//log.Println("After merging, server's membership list", myServer.MembershipList.List)
+				} else if resultMap.Type == 3 {
+					//fmt.Println("Received Quit from ", resultMap.IpAddress)
+					//received leave
+					//s.MembershipList.RemoveNode(incomingIP)
+					s.MergeList(resultMap)
+				} else if resultMap.Type == 4 {
+					//received new block
 
-		//Customize different action
-		if resultMap.Type == 0 {
-			//received join
-			//fmt.Println("Received Join from ", resultMap.IpAddress)
-			s.MergeList(resultMap)
-			s.Ack(resultMap.IpAddress)
-		} else if resultMap.Type == 1 {
-			//received ping
-			//fmt.Println("Received Ping from ", resultMap.IpAddress)
-			s.MergeList(resultMap)
-			s.Ack(resultMap.IpAddress)
-		} else if resultMap.Type == 2 {
-			//received ack
-			//fmt.Println("Received Ack from ", resultMap.IpAddress)
-			for _, entry := range s.MembershipList.List {
-				if entry.InitialTimeStamp == resultMap.InitialTimeStamp && entry.IpAddress == resultMap.IpAddress {
-					s.MembershipList.UpdateNode2(resultMap.IpAddress, 0, 0)
-					break
+					//verify
+					//myServer.VerifyPuzzleSolution(resultMap.Block)
 				}
-			}
-			s.MergeList(resultMap)
-			//log.Println("After merging, server's membership list", myServer.MembershipList.List)
-		} else if resultMap.Type == 3 {
-			//fmt.Println("Received Quit from ", resultMap.IpAddress)
-			//received leave
-			//s.MembershipList.RemoveNode(incomingIP)
-			s.MergeList(resultMap)
-		} else if resultMap.Type == 4 {
-			//received new block
 
-			//verify
-			//myServer.VerifyPuzzleSolution(resultMap.Block)
+			} else if endpointType == "Transaction" {
+
+			} else if endpointType == "Block" {
+
+			}
 		}
+
 	}
 }
 

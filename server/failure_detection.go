@@ -47,7 +47,7 @@ func (s *Server) ping() {
 		var endpoint endpoints.Endpoint
 		endpoint.TEndpoint = s.getTransactionEndpointMetadata()
 		endpoint.FEndpoint = s.getFailureDetectionEndpointMetadata("Ping")
-		endpoint.Types = [] string {"FailureDetectionMeta", "TransactionMeta"}
+		endpoint.SetEndpointType("FailureDetection", "Transaction")
 		s.sendMessageWithUDP(endpoint, ipAddress)
 		s.MembershipList.List[index].LastUpdatedTime = time.Now().Unix()
 	}
@@ -80,7 +80,7 @@ func (s *Server) Ack(ipAddress string) {
 	var endpoint endpoints.Endpoint
 	endpoint.TEndpoint = s.getTransactionEndpointMetadata()
 	endpoint.FEndpoint = s.getFailureDetectionEndpointMetadata("Ack")
-	endpoint.Types = [] string {"FailureDetectionMeta", "TransactionMeta"}
+	endpoint.SetEndpointType("FailureDetection", "Transaction")
 	s.sendMessageWithUDP(endpoint, ipAddress)
 }
 
@@ -92,7 +92,7 @@ func (s *Server) Join(ipAddress string) {
 	var endpoint endpoints.Endpoint
 	endpoint.TEndpoint = s.getTransactionEndpointMetadata()
 	endpoint.FEndpoint = s.getFailureDetectionEndpointMetadata("Join")
-	endpoint.Types = [] string {"FailureDetectionMeta", "TransactionMeta"}
+	endpoint.SetEndpointType("FailureDetection", "Transaction")
 	s.sendMessageWithUDP(endpoint, ipAddress)
 }
 
@@ -111,7 +111,7 @@ func (s *Server) Quit() {
 		var endpoint endpoints.Endpoint
 		endpoint.TEndpoint = s.getTransactionEndpointMetadata()
 		endpoint.FEndpoint = s.getFailureDetectionEndpointMetadata("Quit")
-		endpoint.Types = [] string {"FailureDetectionMeta", "TransactionMeta"}
+		endpoint.SetEndpointType("FailureDetection", "Transaction")
 		s.sendMessageWithUDP(endpoint, ipAddress)
 
 	}
@@ -124,16 +124,17 @@ func (s *Server) MergeList(receivedRequest endpoints.FailureDetectionMeta) {
 			s.MembershipList.UpdateNode(entry)
 		}
 	}
+}
 
-
-	for id, trans := range receivedRequest.Transactions {
-
+func (s * Server)MergeTransactionList(receivedRequest endpoints.TransactionMeta) {
+	for id, trans := range receivedRequest.Tx {
 		if !s.Transactions.Has(id) {
 			log.Println(id, time.Now().UnixNano())
-			s.Transactions.Set(id, &trans)
+			s.Transactions.Append(trans)
 		}
 	}
 }
+
 
 func (s *Server) checkMembershipList() {
 	currTime := time.Now().Unix()

@@ -7,7 +7,7 @@ import (
 )
 
 type Endpoint struct {
-	Types     [] string
+	Types     [] int
 	FEndpoint FailureDetectionMeta
 	TEndpoint TransactionMeta
 	BEndpoint BlockMeta
@@ -36,7 +36,37 @@ func (e *Endpoint)  ToBytes() []byte {
 	return res
 }
 
-func EncodeEndpointType(endpointType string) int {
+func (e *Endpoint)SetEndpointType(endpointTypes ...string{}) {
+	e.Types = make([] int, 1)
+	for _, endpointType := range endpointTypes {
+		if endpointType == "FailureDetection" {
+			e.Types = append(e.Types, 0)
+		} else if endpointType == "Transaction" {
+			e.Types = append(e.Types, 1)
+		} else if endpointType == "Block" {
+			e.Types = append(e.Types, 2)
+		} else {
+			log.Fatal("Bad endpoint type!")
+			os.Exit(12)
+		}
+	}
+}
+
+func (e *Endpoint)GetEndpointTypes() []string {
+	res := make([] string, len(e.Types))
+	for _, endpointType := range e.Types {
+		if endpointType == 0 {
+			res = append(res, "FailureDetection")
+		} else if endpointType == 1 {
+			res = append(res, "Transaction")
+		} else if endpointType == 2 {
+			res = append(res, "Block")
+		}
+	}
+	return  res
+}
+
+func EncodeFailureDetectionActionType(endpointType string) int {
 	if endpointType == "Join" {
 		return 0
 	} else if endpointType == "Ping" {
