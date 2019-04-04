@@ -29,6 +29,6 @@ func (t *Tree)InsertBlock(b Block){
 
 }
 
-func (t* Tree)GetPreviousBlockID()Block{
-	return Block{}
+func (t* Tree)GetPreviousBlockID() string{
+	return ""
 }

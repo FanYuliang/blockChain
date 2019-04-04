@@ -11,28 +11,24 @@ func (s * Server) AskServiceToSolvePuzzle() {
 	time.Sleep(10 * time.Second)
 	fmt.Println("Ask service to solve new puzzle")
 
-	prevBlock := s.Block[len(s.Block)-1]
 	//prepare puzzle and current block
 	s.CurrBlock = blockchain.Block{}
 	transactionToCommit := s.Transactions.Pop(100)
-	s.CurrBlock.Constructor(transactionToCommit)
-	s.CurrBlock.Constructor(prevBlock.Term + 1, transactionToCommit, "")
-	prevRef := utils.Concatenate(prevBlock.Term, int(prevBlock.Timestamp))
+	prevBlockID := s.BlockChain.GetPreviousBlockID()
+	s.CurrBlock.Constructor(transactionToCommit, prevBlockID)
+
 	currPuzzleHolder := new(blockchain.Puzzle)
-	currPuzzleHolder.Constructor(prevRef, s.CurrBlock.TxList)
+	currPuzzleHolder.Constructor(prevBlockID, s.CurrBlock.TxList)
 
 	puzzleToSend := utils.GetSHA256(currPuzzleHolder.ToBytes())
-	s.CurrBlock.Puzzle = puzzleToSend
 	_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("SOLVE ", puzzleToSend, "\n"))
 	utils.CheckError(err)
 }
 
 func (s *Server) VerifyPuzzleSolution(block blockchain.Block) {
-	_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("VERIFY ", block.Puzzle, " ", block.Sol, "\n"))
+	_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("VERIFY ", block.ID, " ", block.Sol, "\n"))
 	utils.CheckError(err)
 }
-
-
 
 func (s *Server) SolvePuzzle() {
 

@@ -16,9 +16,10 @@ type Block struct {
 	term	  		int
 }
 
-func (b *Block)  Constructor(txList [] Transaction)  {
+func (b *Block)  Constructor(txList [] Transaction, prevBlockID string)  {
 	b.ID = utils.Concatenate(rand.Intn(1000000), int(time.Now().Unix()))
 	b.TxList = txList
+	b.PrevBlockID = prevBlockID
 }
 
 func (b *Block)  ToBytes() []byte {

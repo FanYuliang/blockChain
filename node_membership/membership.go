@@ -28,7 +28,6 @@ func (m *Membership) UpdateNode(entry Entry) {
 						m.List[i].EntryType = 0
 						m.List[i].Incarnation = entry.Incarnation
 					} else if m.List[i].EntryType == 1 {
-						fmt.Println("SUSPECT -> ALIVE")
 						m.List[i].EntryType = 0
 						m.List[i].Incarnation = entry.Incarnation
 					}
