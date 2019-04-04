@@ -122,7 +122,7 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 
 			} else if endpointType == "Block" {
 
-			} else if endpointType == "REndpoint"{
+			} else if endpointType == "RequestMissingTransaction"{
 
 			}
 		}
