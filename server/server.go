@@ -116,14 +116,14 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 					//s.MembershipList.RemoveNode(incomingIP)
 					s.MergeList(resultMap)
 				}
-
 			} else if endpointType == "Transaction" {
 
 			} else if endpointType == "Block" {
 
+			} else if endpointType == "RequestMissingTransaction" {
+
 			}
 		}
-
 	}
 }
 

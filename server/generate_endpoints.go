@@ -18,7 +18,6 @@ func (s *Server) getFailureDetectionEndpointMetadata(ActionType string) endpoint
 	return fEndpoint
 }
 
-
 func (s *Server) getTransactionEndpointMetadata() endpoints.TransactionMeta {
 	transactionToSend := s.getTransactSubset()
 	tEndpoint := endpoints.TransactionMeta{transactionToSend}

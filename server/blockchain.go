@@ -15,6 +15,7 @@ func (s * Server) AskServiceToSolvePuzzle() {
 	//prepare puzzle and current block
 	s.CurrBlock = blockchain.Block{}
 	transactionToCommit := s.Transactions.Pop(100)
+	s.CurrBlock.Constructor(transactionToCommit)
 	s.CurrBlock.Constructor(prevBlock.Term + 1, transactionToCommit, "")
 	prevRef := utils.Concatenate(prevBlock.Term, int(prevBlock.Timestamp))
 	currPuzzleHolder := new(blockchain.Puzzle)
