@@ -11,14 +11,14 @@ import (
 
 //cat generic_ccmap.go | genny gen "Key=string BlockchainTransaction=*blockchain.Transaction" > [targetName].go
 
-// BlockchainTransactionList the set of Items
-type BlockchainTransactionList struct {
+// TransactionList the set of Items
+type TransactionList struct {
 	items []blockchain.Transaction
 	lock  sync.RWMutex
 }
 
 // Set adds a new item to the tail of the list
-func (d *BlockchainTransactionList) Append(v blockchain.Transaction) {
+func (d *TransactionList) Append(v blockchain.Transaction) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	if d.items == nil {
@@ -28,7 +28,7 @@ func (d *BlockchainTransactionList) Append(v blockchain.Transaction) {
 }
 
 // Pop front
-func (d *BlockchainTransactionList) Pop(n int) []blockchain.Transaction {
+func (d *TransactionList) Pop(n int) []blockchain.Transaction {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	var res []blockchain.Transaction
@@ -40,4 +40,10 @@ func (d *BlockchainTransactionList) Pop(n int) []blockchain.Transaction {
 		d.items = make([]blockchain.Transaction, 1)
 	}
 	return res
+}
+
+func (d *TransactionList) Size() int {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+	return len(d.items)
 }

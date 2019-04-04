@@ -37,3 +37,9 @@ func (d *ValueList) Pop(n int) []Value {
 	}
 	return res
 }
+
+func (d *ValueList) Size() int {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+	return len(d.items)
+}

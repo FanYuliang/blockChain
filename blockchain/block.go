@@ -8,6 +8,7 @@ type Block struct {
 	TxList 			[] Transaction
 	Puzzle			string
 	Sol				string
+	IsReady 		bool
 }
 
 

@@ -87,7 +87,7 @@ func main() {
 
 	for {
 		n, _ := ServerConn.Read(buf)
-		var resultMap server.Action
+		var resultMap server.Endpoint
 		// parse resultMap to json format
 		err = json.Unmarshal(buf[0:n], &resultMap)
 		utils.CheckError(err)
@@ -95,17 +95,17 @@ func main() {
 		//log.Println("Data received:", resultMap.Record)
 
 		//Customize different action
-		if resultMap.ActionType == 0 {
+		if resultMap.EndpointType == 0 {
 			//received join
 			//fmt.Println("Received Join from ", resultMap.IpAddress)
 			myServer.MergeList(resultMap)
-			myServer.Ack(resultMap.IpAddress, true)
-		} else if resultMap.ActionType == 1 {
+			myServer.Ack(resultMap.IpAddress)
+		} else if resultMap.EndpointType == 1 {
 			//received ping
 			//fmt.Println("Received Ping from ", resultMap.IpAddress)
 			myServer.MergeList(resultMap)
-			myServer.Ack(resultMap.IpAddress, false)
-		} else if resultMap.ActionType == 2 {
+			myServer.Ack(resultMap.IpAddress)
+		} else if resultMap.EndpointType == 2 {
 			//received ack
 			//fmt.Println("Received Ack from ", resultMap.IpAddress)
 			for _, entry := range myServer.MembershipList.List {
@@ -116,11 +116,16 @@ func main() {
 			}
 			myServer.MergeList(resultMap)
 			//log.Println("After merging, server's membership list", myServer.MembershipList.List)
-		} else if resultMap.ActionType == 3 {
+		} else if resultMap.EndpointType == 3 {
 			//fmt.Println("Received QUIT from ", resultMap.IpAddress)
 			//received leave
 			//s.MembershipList.RemoveNode(incomingIP)
 			myServer.MergeList(resultMap)
+		} else if resultMap.EndpointType == 4 {
+			//received new block
+
+			//verify
+			myServer.VerifyPuzzleSolution(resultMap.Block)
 		}
 
 	}

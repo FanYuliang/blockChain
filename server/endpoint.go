@@ -10,7 +10,8 @@ type Endpoint struct {
 	Record           []Entry
 	InitialTimeStamp int64
 	IpAddress        string
-	Transactions     map[string]blockchain.Transaction
+	//Transactions     map[string]blockchain.Transaction
+	Block 			 blockchain.Block
 }
 
 func (a *Endpoint)  ToBytes() []byte {

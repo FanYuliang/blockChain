@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 	"mp2/blockchain"
-	"mp2/ccmap"
+	"mp2/cclist"
 	"mp2/config"
 	"mp2/utils"
 	"net"
@@ -32,7 +32,7 @@ type Server struct {
 	BandwidthLock       sync.Mutex
 	Block               [] blockchain.Block
 	CurrBlock 			blockchain.Block
-	Transactions        *ccmap.BlockchainTransactionMap
+	Transactions        *cclist.TransactionList
 	MessageReceive      int
 	ServiceConn         net.Conn
 }
@@ -55,7 +55,7 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string, serv
 	s.TransactionCap = myConfig.TransacCap
 	s.tDetection = myConfig.DetectionTimeout
 	s.tSuspect = myConfig.SuspiciousTimeout
-	s.Transactions = new(ccmap.BlockchainTransactionMap)
+	s.Transactions = new(cclist.TransactionList)
 	s.tFailure = myConfig.FailureTimeout
 	s.pingNum = myConfig.PingNum
 	s.Name = name
@@ -75,31 +75,30 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string, serv
 }
 
 func (s * Server) AskServiceToSolvePuzzle() {
-	time.Sleep(10 *time.Second)
-	for {
-		time.Sleep(10 * time.Second)
-		fmt.Println("Ask service to solve new puzzle")
-		prevBlock := s.Block[len(s.Block)-1]
-		//prepare puzzle and current block
-		s.CurrBlock = blockchain.Block{}
-		uncommitedTransRaw := s.Transactions.GetUncommittedValsForNext(100)
-		uncommitedTrans := []blockchain.Transaction{}
-		for _, v := range uncommitedTransRaw {
-			uncommitedTrans = append(uncommitedTrans, *v)
-		}
-		s.CurrBlock.Constructor(prevBlock.Term + 1, uncommitedTrans, "")
-		prevRef := utils.Concatenate(prevBlock.Term, int(prevBlock.Timestamp))
-		currPuzzleHolder := new(blockchain.Puzzle)
-		currPuzzleHolder.Constructor(prevRef, s.CurrBlock.TxList)
-
-
-		puzzleToSend := utils.GetSHA256(currPuzzleHolder.ToBytes())
-		s.CurrBlock.Puzzle = puzzleToSend
-		_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("SOLVE ", puzzleToSend, "\n"))
-		utils.CheckError(err)
+	time.Sleep(10 * time.Second)
+	fmt.Println("Ask service to solve new puzzle")
+	if s.CurrBlock.IsReady {
+		fmt.Println("This shouldn't happen: ready current block is about to be deleted.")
 	}
+	prevBlock := s.Block[len(s.Block)-1]
+	//prepare puzzle and current block
+	s.CurrBlock = blockchain.Block{}
+	transactionToCommit := s.Transactions.Pop(100)
+	s.CurrBlock.Constructor(prevBlock.Term + 1, transactionToCommit, "")
+	prevRef := utils.Concatenate(prevBlock.Term, int(prevBlock.Timestamp))
+	currPuzzleHolder := new(blockchain.Puzzle)
+	currPuzzleHolder.Constructor(prevRef, s.CurrBlock.TxList)
+
+	puzzleToSend := utils.GetSHA256(currPuzzleHolder.ToBytes())
+	s.CurrBlock.Puzzle = puzzleToSend
+	_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("SOLVE ", puzzleToSend, "\n"))
+	utils.CheckError(err)
 }
 
+func (s *Server) VerifyPuzzleSolution(block blockchain.Block) {
+	_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("VERIFY ", block.Puzzle, " ", block.Sol, "\n"))
+	utils.CheckError(err)
+}
 func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 	for {
 		//parse incoming service server message
@@ -134,7 +133,8 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 			newTransaction.DNum = dNum
 			newTransaction.SNum = sNum
 			newTransaction.Amount = amount
-			s.Transactions.Set(transactionID, newTransaction)
+			//TODO: to add transaction through ISIS algorithm
+			//s.Transactions.Set(transactionID, newTransaction)
 			log.Println(transactionID, time.Now().UnixNano())
 		} else if messageType == "DIE" {
 			//received a DIE message from service server
@@ -150,8 +150,14 @@ func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 			s.CurrBlock.Sol = puzzleSol
 
 			//2. generate new puzzle
+			go s.AskServiceToSolvePuzzle()
 			//3. broadcast block
-			//4.
+			s.CurrBlock.IsReady = true
+		} else if messageType == "VERIFY" {
+			status := messageArr[1]
+			if status == "OK" {
+
+			}
 		}
 	}
 }
@@ -179,13 +185,20 @@ func (s *Server) ping() {
 	//fmt.Println("membership list size: ", len(s.MembershipList.List))
 	//fmt.Println("targetIndices", targetIndices)
 
+	blockToSend := blockchain.Block{}
+	if s.CurrBlock.IsReady {
+		blockToSend = s.CurrBlock
+		s.CurrBlock = blockchain.Block{}
+	}
+
 	for _, index := range targetIndices {
 
 		if s.MembershipList.List[index].lastUpdatedTime != 0 {
 			continue
 		}
 		ipAddress := s.MembershipList.List[index].IpAddress
-		s.sendMessageWithUDP("Ping", ipAddress, false)
+
+		s.sendMessageWithUDP("Ping", ipAddress, blockToSend)
 		s.MembershipList.List[index].lastUpdatedTime = time.Now().Unix()
 	}
 
@@ -200,9 +213,9 @@ func (s *Server) ping() {
 /*
 	This function should reply to the ping from ipAddress, and disseminate its own disseminateList.
 */
-func (s *Server) Ack(ipAddress string, sendAll bool) {
+func (s *Server) Ack(ipAddress string) {
 	//fmt.Println("Sending ack")
-	s.sendMessageWithUDP("Ack", ipAddress, sendAll)
+	s.sendMessageWithUDP("Ack", ipAddress, blockchain.Block{})
 }
 
 /*
@@ -210,7 +223,7 @@ func (s *Server) Ack(ipAddress string, sendAll bool) {
 */
 func (s *Server) Join(introducerIPAddress string) {
 	//fmt.Println("Sending join request to ", introducerIPAddress)
-	s.sendMessageWithUDP("Join", introducerIPAddress, false)
+	s.sendMessageWithUDP("Join", introducerIPAddress, blockchain.Block{})
 }
 
 /*
@@ -223,11 +236,11 @@ func (s *Server) Quit() {
 		s.MembershipList.ListMutex.Lock()
 		ipAddress := entry.IpAddress
 		s.MembershipList.ListMutex.Unlock()
-		s.sendMessageWithUDP("QUIT", ipAddress, false)
+		s.sendMessageWithUDP("QUIT", ipAddress, blockchain.Block{})
 	}
 }
 
-func (s *Server) MergeList(receivedRequest Action) {
+func (s *Server) MergeList(receivedRequest Endpoint) {
 	//fmt.Println("Start to merge list...")
 	for _, entry := range receivedRequest.Record {
 		if entry.IpAddress != s.MyAddress {
@@ -235,13 +248,14 @@ func (s *Server) MergeList(receivedRequest Action) {
 		}
 	}
 
-	for id, trans := range receivedRequest.Transactions {
-
-		if !s.Transactions.Has(id) {
-			log.Println(id, time.Now().UnixNano())
-			s.Transactions.Set(id, &trans)
-		}
-	}
+	//
+	//for id, trans := range receivedRequest.Transactions {
+	//
+	//	if !s.Transactions.Has(id) {
+	//		log.Println(id, time.Now().UnixNano())
+	//		s.Transactions.Set(id, &trans)
+	//	}
+	//}
 }
 
 func (s *Server) SolvePuzzle() {
@@ -264,7 +278,7 @@ func (s *Server) checkMembershipList() {
 	}
 }
 
-func (s *Server) sendMessageWithUDP(actionType string, ipAddress string, sendAll bool) {
+func (s *Server) sendMessageWithUDP(endpointType string, ipAddress string, block blockchain.Block) {
 	//fmt.Println("ipAddress: ", ipAddress)
 	arr := strings.Split(ipAddress, ":")
 
@@ -286,9 +300,9 @@ func (s *Server) sendMessageWithUDP(actionType string, ipAddress string, sendAll
 	}
 	listToSend = s.getMemebershipSubset(num)
 
-	transactionToSend := s.getTransactSubset()
+	//transactionToSend := s.getTransactSubset()
 
-	action := Action{EncodeActionType(actionType), listToSend, s.InitialTimeStamp, s.MyAddress, transactionToSend}
+	action := Endpoint{EncodeEndpointType(endpointType), listToSend, s.InitialTimeStamp, s.MyAddress, block}
 	//fmt.Println("actionToSend: ", action)
 	n, err := Conn.Write(action.ToBytes())
 	s.BandwidthLock.Lock()
@@ -296,22 +310,22 @@ func (s *Server) sendMessageWithUDP(actionType string, ipAddress string, sendAll
 	s.BandwidthLock.Unlock()
 	utils.CheckError(err)
 }
-
-func (s *Server) getTransactSubset() map[string]blockchain.Transaction {
-	orig := s.Transactions.GetKys()
-	tempArr := utils.Arange(0, s.Transactions.Size(), 1)
-	shuffledArr := utils.Shuffle(tempArr)
-
-	res := make(map[string]blockchain.Transaction)
-
-	for _, v := range shuffledArr {
-		if len(res) > s.TransactionCap {
-			break
-		}
-		res[orig[v]] = *s.Transactions.Get(orig[v])
-	}
-	return res
-}
+//
+//func (s *Server) getTransactSubset() map[string]blockchain.Transaction {
+//	orig := s.Transactions.GetKys()
+//	tempArr := utils.Arange(0, s.Transactions.Size(), 1)
+//	shuffledArr := utils.Shuffle(tempArr)
+//
+//	res := make(map[string]blockchain.Transaction)
+//
+//	for _, v := range shuffledArr {
+//		if len(res) > s.TransactionCap {
+//			break
+//		}
+//		res[orig[v]] = *s.Transactions.Get(orig[v])
+//	}
+//	return res
+//}
 
 func (s *Server) getMemebershipSubset(subsetNum int) []Entry {
 	tempArr := utils.Arange(0, len(s.MembershipList.List), 1)
