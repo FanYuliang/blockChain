@@ -75,8 +75,6 @@ func EncodeFailureDetectionActionType(endpointType string) int {
 		return 2
 	} else if endpointType == "Quit" {
 		return 3
-	} else if endpointType == "New Block" {
-		return 4
 	}
 	return -1
 }

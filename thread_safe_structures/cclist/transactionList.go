@@ -14,6 +14,7 @@ import (
 // TransactionList the set of Items
 type TransactionList struct {
 	items []blockchain.Transaction
+	transactionIDs map[string]int
 	lock  sync.RWMutex
 }
 
@@ -23,8 +24,10 @@ func (d *TransactionList) Append(v blockchain.Transaction) {
 	defer d.lock.Unlock()
 	if d.items == nil {
 		d.items = make([]blockchain.Transaction, 1)
+		d.transactionIDs = make(map[string]int)
 	}
 	d.items = append(d.items, v)
+	d.transactionIDs[v.ID] = 1
 }
 
 // Pop front
@@ -39,6 +42,11 @@ func (d *TransactionList) Pop(n int) []blockchain.Transaction {
 		res = d.items
 		d.items = make([]blockchain.Transaction, 1)
 	}
+
+	for _, tx := range res {
+		delete(d.transactionIDs, tx.ID)
+	}
+
 	return res
 }
 
@@ -49,6 +57,6 @@ func (d *TransactionList) Size() int {
 }
 
 func (d *TransactionList) Has(transactionID string) bool {
-
-	return
+ 	_, ok := d.transactionIDs[transactionID]
+	return ok
 }

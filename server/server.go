@@ -120,11 +120,6 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 					//received leave
 					//s.MembershipList.RemoveNode(incomingIP)
 					s.MergeList(resultMap)
-				} else if resultMap.Type == 4 {
-					//received new block
-
-					//verify
-					//myServer.VerifyPuzzleSolution(resultMap.Block)
 				}
 
 			} else if endpointType == "Transaction" {
@@ -189,8 +184,6 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 
 			//2. generate new puzzle
 			go s.AskServiceToSolvePuzzle()
-			//3. broadcast block
-			s.CurrBlock.IsReady = true
 		} else if messageType == "VERIFY" {
 			status := messageArr[1]
 			if status == "OK" {
