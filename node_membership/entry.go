@@ -1,14 +1,14 @@
-package server
+package node_membership
 
 import "log"
 
 type Entry struct {
-	Name 				string
-	IpAddress 			string
-	InitialTimeStamp 	int64
-	Incarnation 		int
-	EntryType 			int //0 for alive, 1 for suspected, 2 for failed
-	lastUpdatedTime 	int64
+	Name             string
+	IpAddress        string
+	InitialTimeStamp int64
+	Incarnation      int
+	EntryType        int //0 for alive, 1 for suspected, 2 for failed
+	LastUpdatedTime  int64
 }
 
 func EncodeEntryType(entryType string) int {

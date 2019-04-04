@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"log"
 	"mp2/blockchain"
-	"mp2/cclist"
 	"mp2/config"
+	"mp2/endpoints"
+	"mp2/node_membership"
+	"mp2/thread_safe_structures/cclist"
 	"mp2/utils"
 	"net"
 	"os"
@@ -25,7 +27,7 @@ type Server struct {
 	pingNum             int
 	TransactionCap      int
 	IntroducerIpAddress string
-	MembershipList      *Membership
+	MembershipList      *node_membership.Membership
 	MyAddress           string
 	InitialTimeStamp    int64
 	Bandwidth           float64
@@ -47,7 +49,7 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string, serv
 	utils.CheckError(err)
 
 	currTimeStamp := time.Now().Unix()
-	s.MembershipList = new(Membership)
+	s.MembershipList = new(node_membership.Membership)
 	s.ServiceConn = serviceConn
 	s.MyAddress = myIP
 	s.IntroducerIpAddress = introducerIP
@@ -59,10 +61,10 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string, serv
 	s.tFailure = myConfig.FailureTimeout
 	s.pingNum = myConfig.PingNum
 	s.Name = name
-	var entry Entry
+	var entry node_membership.Entry
 	entry.Name = name
-	entry.lastUpdatedTime = 0
-	entry.EntryType = EncodeEntryType("alive")
+	entry.LastUpdatedTime = 0
+	entry.EntryType = endpoints.EncodeEndpointType("alive")
 	entry.Incarnation = 0
 	entry.InitialTimeStamp = currTimeStamp
 	entry.IpAddress = myIP
@@ -99,6 +101,7 @@ func (s *Server) VerifyPuzzleSolution(block blockchain.Block) {
 	_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("VERIFY ", block.Puzzle, " ", block.Sol, "\n"))
 	utils.CheckError(err)
 }
+
 func (s *Server) TalkWithServiceServer(serviceConn net.Conn) {
 	for {
 		//parse incoming service server message
@@ -175,199 +178,26 @@ func (s *Server) StartPing(duration time.Duration) {
 
 
 
-/*
-	This function should ping to num processes. And at the same time, it should disseminate entries stored in the disseminateList
-*/
-func (s *Server) ping() {
-	//fmt.Println("Start to ping...")
-	targetIndices := s.getPingTargets()
-	s.getNonFailureMembershipSize()
-	//fmt.Println("membership list size: ", len(s.MembershipList.List))
-	//fmt.Println("targetIndices", targetIndices)
-
-	blockToSend := blockchain.Block{}
-	if s.CurrBlock.IsReady {
-		blockToSend = s.CurrBlock
-		s.CurrBlock = blockchain.Block{}
-	}
-
-	for _, index := range targetIndices {
-
-		if s.MembershipList.List[index].lastUpdatedTime != 0 {
-			continue
-		}
-		ipAddress := s.MembershipList.List[index].IpAddress
-
-		s.sendMessageWithUDP("Ping", ipAddress, blockToSend)
-		s.MembershipList.List[index].lastUpdatedTime = time.Now().Unix()
-	}
-
-
-	var names []string
-	for _, v := range s.MembershipList.List {
-		names = append(names, v.Name)
-	}
-	//fmt.Println("server's membership list: ", names)
-}
-
-/*
-	This function should reply to the ping from ipAddress, and disseminate its own disseminateList.
-*/
-func (s *Server) Ack(ipAddress string) {
-	//fmt.Println("Sending ack")
-	s.sendMessageWithUDP("Ack", ipAddress, blockchain.Block{})
-}
-
-/*
-	This function invoke when it attempts to connect with the introducer node. If success, it should update its membership list
-*/
-func (s *Server) Join(introducerIPAddress string) {
-	//fmt.Println("Sending join request to ", introducerIPAddress)
-	s.sendMessageWithUDP("Join", introducerIPAddress, blockchain.Block{})
-}
-
-/*
-	This function invoke when it quits the group
-*/
-func (s *Server) Quit() {
-	fmt.Println("Sending QUIT request")
-	s.MembershipList.UpdateNode2(s.MyAddress, 2, 0)
-	for _, entry := range s.MembershipList.List {
-		s.MembershipList.ListMutex.Lock()
-		ipAddress := entry.IpAddress
-		s.MembershipList.ListMutex.Unlock()
-		s.sendMessageWithUDP("QUIT", ipAddress, blockchain.Block{})
-	}
-}
-
-func (s *Server) MergeList(receivedRequest Endpoint) {
-	//fmt.Println("Start to merge list...")
-	for _, entry := range receivedRequest.Record {
-		if entry.IpAddress != s.MyAddress {
-			s.MembershipList.UpdateNode(entry)
-		}
-	}
-
-	//
-	//for id, trans := range receivedRequest.Transactions {
-	//
-	//	if !s.Transactions.Has(id) {
-	//		log.Println(id, time.Now().UnixNano())
-	//		s.Transactions.Set(id, &trans)
-	//	}
-	//}
-}
-
 func (s *Server) SolvePuzzle() {
 
 }
 
-func (s *Server) checkMembershipList() {
-	currTime := time.Now().Unix()
-	//check if any process is MembershipList or failed
-	for i := len(s.MembershipList.List) - 1; i >= 0; i-- {
-		entry := s.MembershipList.List[i]
-		if entry.EntryType == 0 && currTime-entry.lastUpdatedTime >= s.tDetection && entry.lastUpdatedTime != 0 {
-			//alive now but passed detection timeout
-			s.MembershipList.List[i].lastUpdatedTime = 0
-			s.MembershipList.List[i].EntryType = 1
-		} else if entry.EntryType == 1 && currTime-entry.lastUpdatedTime >= s.tSuspect && entry.lastUpdatedTime != 0 {
-			//suspected now but passed suspected timeout
-			s.MembershipList.List[i].EntryType = 2
-		}
-	}
-}
-
-func (s *Server) sendMessageWithUDP(endpointType string, ipAddress string, block blockchain.Block) {
-	//fmt.Println("ipAddress: ", ipAddress)
-	arr := strings.Split(ipAddress, ":")
-
-	myPort, err := strconv.Atoi(arr[1])
-	utils.CheckError(err)
-
-	iparr := utils.StringAddrToIntArr(ipAddress)
-	Conn, err := net.DialUDP("udp", nil, &net.UDPAddr{IP: iparr, Port: myPort, Zone: ""})
-	utils.CheckError(err)
-	defer Conn.Close()
-
-
-	listToSend := s.getMemebershipSubset(int(float32(len(s.MembershipList.List))*0.5))
-
-	num := int(float32(len(s.MembershipList.List))*0.3)
-
-	if num < 1 {
-		num = 1
-	}
-	listToSend = s.getMemebershipSubset(num)
-
-	//transactionToSend := s.getTransactSubset()
-
-	action := Endpoint{EncodeEndpointType(endpointType), listToSend, s.InitialTimeStamp, s.MyAddress, block}
-	//fmt.Println("actionToSend: ", action)
-	n, err := Conn.Write(action.ToBytes())
-	s.BandwidthLock.Lock()
-	s.Bandwidth += float64(int(n)/1024)
-	s.BandwidthLock.Unlock()
-	utils.CheckError(err)
-}
-//
-//func (s *Server) getTransactSubset() map[string]blockchain.Transaction {
-//	orig := s.Transactions.GetKys()
-//	tempArr := utils.Arange(0, s.Transactions.Size(), 1)
-//	shuffledArr := utils.Shuffle(tempArr)
-//
-//	res := make(map[string]blockchain.Transaction)
-//
-//	for _, v := range shuffledArr {
-//		if len(res) > s.TransactionCap {
-//			break
-//		}
-//		res[orig[v]] = *s.Transactions.Get(orig[v])
-//	}
-//	return res
-//}
-
-func (s *Server) getMemebershipSubset(subsetNum int) []Entry {
-	tempArr := utils.Arange(0, len(s.MembershipList.List), 1)
+func (s *Server) getTransactSubset() [] blockchain.Transaction {
+	/*
+	orig := s.Transactions.GetKys()
+	tempArr := utils.Arange(0, s.Transactions.Size(), 1)
 	shuffledArr := utils.Shuffle(tempArr)
-	var res [] Entry
-	for i, v := range shuffledArr {
-		if i >= subsetNum {
+
+	res := make(map[string]blockchain.Transaction)
+
+	for _, v := range shuffledArr {
+		if len(res) > s.TransactionCap {
 			break
 		}
-		res = append(res, s.MembershipList.List[v])
+		res[orig[v]] = *s.Transactions.Get(orig[v])
 	}
 	return res
-}
-
-func (s *Server) getPingTargets() []int {
-	selfInd := s.findSelfInMembershipList()
-	tempArr := utils.Arange(selfInd, selfInd + int(len(s.MembershipList.List)/2) + 1, 1)
-	var res []int
-	for _, v := range tempArr {
-		res = append(res, v%len(s.MembershipList.List))
-	}
-	return res
-}
-
-func (s *Server) findSelfInMembershipList() int {
-	for ind, entry := range s.MembershipList.List {
-		if s.MyAddress == entry.IpAddress {
-			return ind
-		}
-	}
-
-	fmt.Println("Fail to find self in membership list.")
-	return -1
-}
-
-
-func (s *Server) getNonFailureMembershipSize() {
-	size := 0
-	for _, v := range s.MembershipList.List {
-		if v.EntryType != 2 {
-			size += 1
-		}
-	}
-	fmt.Println("Non failure membership size: ", size)
+	*/
+	var txList [] blockchain.Transaction
+	return txList
 }

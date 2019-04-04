@@ -1,6 +1,9 @@
 package blockchain
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type Block struct {
 	Term 			int
@@ -18,4 +21,9 @@ func (b *Block)  Constructor(term int, txList [] Transaction, puzzle string)  {
 	b.TxList = txList
 	b.Puzzle = puzzle
 	b.Sol = ""
+}
+
+func (b *Block)  ToBytes() []byte {
+	res, _ := json.Marshal(b)
+	return res
 }

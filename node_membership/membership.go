@@ -1,4 +1,4 @@
-package server
+package node_membership
 
 import (
 	"fmt"
@@ -77,7 +77,7 @@ func (m *Membership) UpdateNode2(ipAddress string, entryType int, lastUpdatedTim
 	for i, elem := range m.List {
 		if elem.IpAddress == ipAddress {
 			m.List[i].EntryType = entryType
-			m.List[i].lastUpdatedTime = lastUpdatedTime
+			m.List[i].LastUpdatedTime = lastUpdatedTime
 			return
 		}
 	}
