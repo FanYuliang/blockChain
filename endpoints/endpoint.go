@@ -55,8 +55,7 @@ func (e *Endpoint)SetEndpointType(endpointTypes ...string) {
 			e.Types = append(e.Types, 2)
 		} else if endpointType == "REndpoint"{
 			e.Types = append(e.Types,3)
-		}
-		else {
+		} else {
 			log.Fatal("Bad endpoint type!")
 			os.Exit(12)
 		}
