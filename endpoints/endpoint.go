@@ -11,6 +11,12 @@ type Endpoint struct {
 	FEndpoint FailureDetectionMeta
 	TEndpoint TransactionMeta
 	BEndpoint BlockMeta
+	REndpoint RequestMissingMeta
+}
+
+type RequestMissingMeta struct{
+	Type 			int
+
 }
 
 type FailureDetectionMeta struct {

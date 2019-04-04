@@ -2,20 +2,20 @@ package blockchain
 
 import (
 	"encoding/json"
-	"time"
 )
 
 type Block struct {
-	Term 			int
-	Timestamp		int64
+	ID 				string
+	PreviousBlockID string
 	TxList 			[] Transaction
 	Sol				string
+	Term 	 		int
+	Balance  		map[string]int
 }
 
 
 func (b *Block)  Constructor(term int, txList [] Transaction)  {
 	b.Term = term
-	b.Timestamp = time.Now().Unix()
 	b.TxList = txList
 	b.Sol = ""
 }
