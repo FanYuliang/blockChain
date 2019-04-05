@@ -124,9 +124,11 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
  				s.MergeTransactionList(transactionMeta)
 			} else if endpointType == "Block" {
 				receivedBlock := endpoint.BEndpoint.Block
-				s.VerifyBlock(receivedBlock)
-				s.BlockChain.PushToHoldBackQueue(receivedBlock)
 
+				if !s.BlockChain.CheckHasReplicateBlocks(receivedBlock){// if has replica, drop the block
+					s.BlockChain.PushToHoldBackQueue(receivedBlock)
+					s.VerifyBlock(receivedBlock)
+				}
 			}else if endpointType == "HandleMissingTransaction"{
 				if endpoint.REndpoint.Type == 0{// request missing transaction
 					item,err := s.BlockChain.GetBlockByID(endpoint.REndpoint.MissingTransactionID)
@@ -195,7 +197,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			go s.AskServiceToSolvePuzzle(5 * time.Second)
 		} else if messageType == "VERIFY" {
 			status := messageArr[1]
-			receivedBlock,_ := s.BlockChain.FindBlockByPuzzle(messageArr[2])
+			receivedBlock,_ := s.BlockChain.FindBlockInHoldBackQueueByPuzzle(messageArr[2])
 			if receivedBlock.Term > s.BlockChain.GetLongestChainTerm() { // block is latest
 				if status == "ok" {
 					prevBlock, err := s.BlockChain.GetPreviousBlock(receivedBlock.PrevBlockID)
@@ -205,7 +207,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 					}else{ // find parent of received block in my blockchain
 						if (s.checkBlockBalance(prevBlock,receivedBlock)){// check whether final transaction sum is correct
 							s.BlockChain.InsertBlock(receivedBlock)
-							s.SendBlock(receivedBlock)
+							//s.Transactions = &s.BlockChain.GetCommitedTransaction(receivedBlock)
 							//@Todo continue solving puzzles....
 						} else{
 							fmt.Println("block has incorrect sum in it")
@@ -223,6 +225,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 					s.BlockChain.InsertBlock(receivedBlock)
 				}
 			}
+			s.BlockChain.RemoveBlcokFromQueue(receivedBlock)
 		}
 	}
 }

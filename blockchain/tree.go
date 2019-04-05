@@ -1,7 +1,9 @@
 package blockchain
-import(
+
+import (
 	"errors"
-	"sync")
+	"sync"
+)
 
 type Tree struct{
 	blockmap		map[string]Block
@@ -92,11 +94,49 @@ func (t *Tree)PushToHoldBackQueue(b Block){
 	t.holdbackQueue = append(t.holdbackQueue, b)
 }
 
-func (t *Tree)FindBlockByPuzzle(puzzle string)(Block,error){
+func (t *Tree)FindBlockInHoldBackQueueByPuzzle(puzzle string)(Block,error){
 	for _,elem := range(t.holdbackQueue){
 		if elem.GetPuzzle() == puzzle {
 			return elem,nil
 		}
 	}
 	return Block{},errors.New("no block found")
+}
+
+func (t *Tree)CheckHasReplicateBlocks(b Block)bool{
+	for _,elem := range t.holdbackQueue{
+		if b.ID == elem.ID{
+			return true
+		}
+	}
+	if _,err := t.GetBlockByID(b.ID);err!=nil {
+		return false
+	} else{
+		return true
+	}
+
+}
+
+func (t *Tree)RemoveBlcokFromQueue(b Block){
+	for i,elem := range t.holdbackQueue{
+		if elem.ID == b.ID {
+			t.holdbackQueue[i], t.holdbackQueue[len(t.holdbackQueue)-1] = t.holdbackQueue[len(t.holdbackQueue)-1] ,t.holdbackQueue[i]
+			t.holdbackQueue = t.holdbackQueue[:len(t.holdbackQueue)-1]
+			return
+		}
+	}
+}
+
+func (t *Tree)GetCommitedTransaction(b Block)TransactionList {
+	//var txmap = map[Transaction]int
+	//var ret = TransactionList{}
+	//for b.PrevBlockID != "-1"{
+	//	for _,elem := range b.TxList {
+	//		if v,ok:=txmap[elem]; ok{
+	//			fmt.Println("repeated transaction!!!")
+	//		}
+	//		ret.Append(elem)
+	//	}
+	//}
+	return TransactionList{}
 }
