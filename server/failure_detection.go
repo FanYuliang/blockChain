@@ -17,6 +17,7 @@ func (s *Server) StartPing(duration time.Duration) {
 		s.checkMembershipList()
 		s.MembershipList.ListMutex.Unlock()
 		fmt.Println(s.Name, " Transaction count: ", s.Transactions.Size())
+		fmt.Println(s.Name, " Uncommitted transaction count: ", s.Transactions.UncommittedSize())
 	}
 }
 
@@ -47,7 +48,6 @@ func (s *Server) ping() {
 		endpoint.TEndpoint = s.getTransactionEndpointMetadata()
 		endpoint.FEndpoint = s.getFailureDetectionEndpointMetadata("Ping")
 		endpoint.SetEndpointType("FailureDetection", "Transaction")
-		fmt.Println("fsdfddsfdssf")
 		s.sendMessageWithUDP(endpoint, ipAddress)
 		s.MembershipList.List[index].LastUpdatedTime = time.Now().Unix()
 	}

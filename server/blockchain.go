@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-func (s * Server) AskServiceToSolvePuzzle() {
-	time.Sleep(10 * time.Second)
+func (s * Server) AskServiceToSolvePuzzle(waitTime time.Duration) {
+	time.Sleep(waitTime)
 	fmt.Println("Ask service to solve new puzzle")
 
 	//prepare puzzle and current block
@@ -18,7 +18,6 @@ func (s * Server) AskServiceToSolvePuzzle() {
 	transactionToCommit := s.Transactions.GetTransactionToCommit(100)
 	prevBlockID := s.BlockChain.GetPreviousBlockId()
 	s.CurrBlock.Constructor(prevBlockID)
-
 	for _, tx := range transactionToCommit {
 		ok := s.CurrBlock.AddTransaction(tx)
 		if ok {
@@ -42,27 +41,18 @@ func (s * Server) MergeTransactionList(receivedRequest endpoints.TransactionMeta
 }
 
 func (s *Server) SendBlock(b blockchain.Block) {
-	targetIndices := s.getPingTargets()
-	s.getNonFailureMembershipSize()
-	for _, index := range targetIndices {
-
-		//if s.MembershipList.List[index].LastUpdatedTime != 0 {
-		//	continue
-		//}
-		ipAddress := s.MembershipList.List[index].IpAddress
-
+	fmt.Println("Sending block: ", b)
+	for _, index := range s.getPingTargets() {
+		targetAddress := s.MembershipList.List[index].IpAddress
 		var endpoint endpoints.Endpoint
 		endpoint.BEndpoint = s.getBlockMeta(b)
 		endpoint.SetEndpointType( "Block")
-		s.sendMessageWithUDP(endpoint, ipAddress)
+		s.sendMessageWithUDP(endpoint, targetAddress)
 	}
-
 }
 
 func (s *Server) RequestMissingBlockToNode(id string, myaddr string) {
-	targetIndices := s.getPingTargets()
-	s.getNonFailureMembershipSize()
-	for _, index := range targetIndices {
+	for _, index := range s.getPingTargets() {
 		ipAddress := s.MembershipList.List[index].IpAddress
 
 		var endpoint endpoints.Endpoint

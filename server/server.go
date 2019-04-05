@@ -190,11 +190,9 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			puzzleSol := messageArr[2]
 			fmt.Println("puzzleInput: ", puzzleInput)
 			fmt.Println("puzzleSol: ", puzzleSol)
-			//1. add solution to the current block
 			s.CurrBlock.Sol = puzzleSol
-
-			//2. generate new puzzle
-			go s.AskServiceToSolvePuzzle()
+			s.SendBlock(s.CurrBlock)
+			go s.AskServiceToSolvePuzzle(5 * time.Second)
 		} else if messageType == "VERIFY" {
 			status := messageArr[1]
 			receivedBlock,_ := s.BlockChain.PopFromHoldBackQueue()
@@ -213,6 +211,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 							fmt.Println("block has incorrect sum in it")
 						}
 					}
+					go s.AskServiceToSolvePuzzle(5 * time.Second)
 				} else{ // verification failed ; report
 					fmt.Println("this block is failed")
 				}
