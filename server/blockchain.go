@@ -19,10 +19,15 @@ func (s * Server) AskServiceToSolvePuzzle() {
 	prevBlockID := s.BlockChain.GetPreviousBlockID()
 	s.CurrBlock.Constructor(prevBlockID)
 
-	currPuzzleHolder := new(blockchain.Puzzle)
-	currPuzzleHolder.Constructor(prevBlockID, s.CurrBlock.TxList)
-
-	puzzleToSend := utils.GetSHA256(currPuzzleHolder.ToBytes())
+	for _, tx := range transactionToCommit {
+		ok := s.CurrBlock.AddTransaction(tx)
+		if ok {
+			s.Transactions.SetTransaction(tx, "committed")
+		} else {
+			s.Transactions.SetTransaction(tx, "invalid")
+		}
+	}
+	puzzleToSend := s.CurrBlock.GetPuzzle()
 	_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("SOLVE ", puzzleToSend, "\n"))
 	utils.CheckError(err)
 }
