@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 )
 
@@ -128,15 +129,17 @@ func (t *Tree)RemoveBlcokFromQueue(b Block){
 }
 
 func (t *Tree)GetCommitedTransaction(b Block)TransactionList {
-	//var txmap = map[Transaction]int
-	//var ret = TransactionList{}
-	//for b.PrevBlockID != "-1"{
-	//	for _,elem := range b.TxList {
-	//		if v,ok:=txmap[elem]; ok{
-	//			fmt.Println("repeated transaction!!!")
-	//		}
-	//		ret.Append(elem)
-	//	}
-	//}
-	return TransactionList{}
+	var txmap = make(map[string]int)
+	var ret = TransactionList{}
+	for b.PrevBlockID != "-1"{
+		for _,elem := range b.TxList {
+			if _,ok:=txmap[elem.ID]; ok{
+				fmt.Println("repeated transaction!!!",elem.ID)
+			} else{
+				txmap[elem.ID] = 1
+				ret.Append(elem)
+			}
+		}
+	}
+	return ret
 }

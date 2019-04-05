@@ -103,7 +103,8 @@ func (s *Server)checkBlockBalance(prevBlock blockchain.Block ,solBlock blockchai
 	for _,elem := range solBlock.TxList {
 		amount := elem.Amount
 		if elem.SNum-amount<0 {
-			continue
+			fmt.Println("invalid transaction!!!")
+			return false
 		}else {
 			currBalance[elem.SNum] -= amount
 			currBalance[elem.DNum] += amount
