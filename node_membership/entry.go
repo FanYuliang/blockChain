@@ -11,7 +11,7 @@ type Entry struct {
 	LastUpdatedTime  int64
 }
 
-func EncodeEntryType(entryType string) int {
+func (e *Entry) EncodeEntryType(entryType string) int {
 	if entryType == "alive" {
 		return 0
 	} else if entryType == "suspected" {

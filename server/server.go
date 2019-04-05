@@ -64,7 +64,7 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string, serv
 	var entry node_membership.Entry
 	entry.Name = name
 	entry.LastUpdatedTime = 0
-	entry.EntryType = endpoints.EncodeFailureDetectionActionType("alive")
+	entry.EntryType = entry.EncodeEntryType("alive")
 	entry.Incarnation = 0
 	entry.InitialTimeStamp = currTimeStamp
 	entry.IpAddress = myIP
