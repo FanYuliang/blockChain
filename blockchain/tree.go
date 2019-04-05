@@ -10,7 +10,7 @@ type Tree struct{
 
 func (t *Tree)Constructor(){
 	var sentinelBlock Block
-	sentinelBlock.Constructor([]Transaction{}, "-1")
+	sentinelBlock.Constructor("-1")
 	t.Sentinel.ID = string(0)
 	t.Sentinel = sentinelBlock
 	t.Leaf = make([]Block,0)
