@@ -47,6 +47,7 @@ func (s *Server) ping() {
 		endpoint.TEndpoint = s.getTransactionEndpointMetadata()
 		endpoint.FEndpoint = s.getFailureDetectionEndpointMetadata("Ping")
 		endpoint.SetEndpointType("FailureDetection", "Transaction")
+		fmt.Println("fsdfddsfdssf")
 		s.sendMessageWithUDP(endpoint, ipAddress)
 		s.MembershipList.List[index].LastUpdatedTime = time.Now().Unix()
 	}
@@ -66,7 +67,10 @@ func (s *Server) getPingTargets() []int {
 	tempArr := utils.Arange(selfInd, selfInd + int(len(s.MembershipList.List)/2) + 1, 1)
 	var res []int
 	for _, v := range tempArr {
-		res = append(res, v%len(s.MembershipList.List))
+		curr := v%len(s.MembershipList.List)
+		if curr != selfInd {
+			res = append(res, curr)
+		}
 	}
 	return res
 }

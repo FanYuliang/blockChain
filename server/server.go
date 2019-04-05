@@ -118,7 +118,9 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 					s.MergeList(resultMap)
 				}
 			} else if endpointType == "Transaction" {
+				fmt.Println("Received new transaction: ", )
 				transactionMeta := endpoint.TEndpoint
+				fmt.Println(transactionMeta)
 				s.MergeTransactionList(transactionMeta)
 			} else if endpointType == "Block" {
 
