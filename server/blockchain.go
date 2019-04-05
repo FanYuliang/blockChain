@@ -15,7 +15,7 @@ func (s * Server) AskServiceToSolvePuzzle() {
 
 	//prepare puzzle and current block
 	s.CurrBlock = blockchain.Block{}
-	//transactionToCommit := s.Transactions.GetTransactionToCommit(100)
+	transactionToCommit := s.Transactions.GetTransactionToCommit(100)
 	prevBlockID := s.BlockChain.GetPreviousBlockId()
 	s.CurrBlock.Constructor(prevBlockID)
 
@@ -32,15 +32,6 @@ func (s * Server) AskServiceToSolvePuzzle() {
 	utils.CheckError(err)
 }
 
-func (s *Server) VerifyPuzzleSolution(block blockchain.Block) {
-	_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("VERIFY ", block.ID, " ", block.Sol, "\n"))
-	utils.CheckError(err)
-}
-
-func (s *Server) SolvePuzzle() {
-
-}
-
 func (s * Server) MergeTransactionList(receivedRequest endpoints.TransactionMeta) {
 	for _, tx := range receivedRequest.Tx {
 		if !s.Transactions.Has(tx.ID) {
@@ -49,7 +40,6 @@ func (s * Server) MergeTransactionList(receivedRequest endpoints.TransactionMeta
 		}
 	}
 }
-
 
 func (s *Server) SendBlock(b blockchain.Block) {
 	targetIndices := s.getPingTargets()
@@ -87,7 +77,7 @@ func (s *Server) RequestMissingBlockToNode(id string, myaddr string) {
 func (s *Server) SendMissingBlockToNode(b blockchain.Block, ipaddr string) {
 
 	var endpoint endpoints.Endpoint
-	endpoint = s.getBlockMeta(b)
+	endpoint.BEndpoint = s.getBlockMeta(b)
 	endpoint.SetEndpointType("Block")
 	s.sendMessageWithUDP(endpoint,ipaddr)
 
