@@ -126,7 +126,7 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 			} else if endpointType == "Block" {
 				receivedBlock := endpoint.BEndpoint.Block
 				fmt.Println("Received Block: ", receivedBlock)
-				if !s.BlockChain.CheckHasReplicateBlocks(receivedBlock){// if has replica, drop the block
+				if !s.BlockChain.Has(receivedBlock){ // if has replica, drop the block
 					s.BlockChain.PushToHoldBackQueue(receivedBlock)
 					s.VerifyBlock(receivedBlock)
 				}
@@ -199,7 +199,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 		} else if messageType == "VERIFY" {
 			status := messageArr[1]
 			receivedBlock,_ := s.BlockChain.FindBlockInHoldBackQueueByPuzzle(messageArr[2])
-			if receivedBlock.Term > s.BlockChain.GetLongestChainTerm() { // block is latest
+			if receivedBlock.Term > s.BlockChain.GetTermOfLongestChain() { // block is latest
 				if status == "ok" {
 					prevBlock, err := s.BlockChain.GetPreviousBlock(receivedBlock.PrevBlockID)
 					if err != nil { //missing previous block(s), asking for other nodes to resend...
@@ -208,6 +208,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 					}else{ // find parent of received block in my blockchain
 						if (s.checkBlockBalance(prevBlock,receivedBlock)){// check whether final transaction sum is correct
 							s.BlockChain.InsertBlock(receivedBlock)
+
 							totalTxlist := s.BlockChain.GetCommitedTransaction(receivedBlock)
 							for i,elem := range totalTxlist {
 								s.Transactions
@@ -229,7 +230,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 					s.BlockChain.InsertBlock(receivedBlock)
 				}
 			}
-			s.BlockChain.RemoveBlcokFromQueue(receivedBlock)
+			s.BlockChain.RemoveBlockFromQueue(receivedBlock)
 		}
 	}
 }

@@ -28,7 +28,7 @@ func (t *Tree)Constructor(){
 //	t.Leaf = make([]Block,0)
 //}
 
-func (t *Tree)GetLongestChainTerm()int{
+func (t *Tree) GetTermOfLongestChain()int{
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 	max := 0
@@ -104,7 +104,7 @@ func (t *Tree)FindBlockInHoldBackQueueByPuzzle(puzzle string)(Block,error){
 	return Block{},errors.New("no block found")
 }
 
-func (t *Tree)CheckHasReplicateBlocks(b Block)bool{
+func (t *Tree) Has(b Block)bool{
 	for _,elem := range t.holdbackQueue{
 		if b.ID == elem.ID{
 			return true
@@ -118,7 +118,7 @@ func (t *Tree)CheckHasReplicateBlocks(b Block)bool{
 
 }
 
-func (t *Tree)RemoveBlcokFromQueue(b Block){
+func (t *Tree) RemoveBlockFromQueue(b Block){
 	for i,elem := range t.holdbackQueue{
 		if elem.ID == b.ID {
 			t.holdbackQueue[i], t.holdbackQueue[len(t.holdbackQueue)-1] = t.holdbackQueue[len(t.holdbackQueue)-1] ,t.holdbackQueue[i]
@@ -128,14 +128,15 @@ func (t *Tree)RemoveBlcokFromQueue(b Block){
 	}
 }
 
+
 func (t *Tree)GetCommitedTransaction(b Block)TransactionList {
-	var txmap = make(map[string]int)
-	var ret = TransactionList{}
-	for b.PrevBlockID != "-1"{
-		for _,elem := range b.TxList {
-			if _,ok:=txmap[elem.ID]; ok{
-				fmt.Println("repeated transaction!!!",elem.ID)
-			} else{
+	var txmap= make(map[string]int)
+	var ret= TransactionList{}
+	for b.PrevBlockID != "-1" {
+		for _, elem := range b.TxList {
+			if _, ok := txmap[elem.ID]; ok {
+				fmt.Println("repeated transaction!!!", elem.ID)
+			} else {
 				txmap[elem.ID] = 1
 				ret.Append(elem)
 			}
