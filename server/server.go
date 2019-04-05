@@ -197,7 +197,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			go s.AskServiceToSolvePuzzle()
 		} else if messageType == "VERIFY" {
 			status := messageArr[1]
-			receivedBlock,_ := s.BlockChain.PopFromHoldBackQueue()
+			receivedBlock,_ := s.BlockChain.FindBlockByPuzzle(messageArr[2])
 			if receivedBlock.Term > s.BlockChain.GetLongestChainTerm() { // block is latest
 				if status == "ok" {
 					prevBlock, err := s.BlockChain.GetPreviousBlock(receivedBlock.PrevBlockID)
@@ -217,7 +217,12 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 					fmt.Println("this block is failed")
 				}
 			}else{ // not latest;
-
+				prevblock,err := s.BlockChain.GetBlockByID(receivedBlock.PrevBlockID)
+				if err != nil {// not found
+					s.RequestMissingBlockToNode(prevblock.ID,s.MyAddress)
+				}else{
+					s.BlockChain.InsertBlock(receivedBlock)
+				}
 			}
 		}
 	}
@@ -244,3 +249,7 @@ func (s *Server) sendMessageWithUDP(endpoint endpoints.Endpoint, ipAddress strin
 	s.BandwidthLock.Unlock()
 	utils.CheckError(err)
 }
+
+
+
+

@@ -4,18 +4,18 @@ import(
 	"sync")
 
 type Tree struct{
-	Sentinel 		Block
+	blockmap		map[string]Block
 	Leaf			[]Block
 	lock 			sync.RWMutex
 	holdbackQueue	[]Block
+
 }
 
 func (t *Tree)Constructor(){
 
 	var sentinelBlock Block
 	sentinelBlock.Constructor("-1")
-	t.Sentinel.ID = string(0)
-	t.Sentinel = sentinelBlock
+	t.blockmap["-1"] = sentinelBlock
 	t.Leaf = make([]Block,0)
 }
 
@@ -39,40 +39,33 @@ func (t *Tree)GetLongestChainTerm()int{
 
 
 
-func (t *Tree)InsertBlock(b Block)(error){
+func (t *Tree)InsertBlock(b Block){
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	for i,elem := range t.Leaf{
-		if elem.ID == b.PrevBlockID{
+	t.blockmap[b.ID] = b
+	for i,elem := range t.Leaf {
+		if elem.ID == b.PrevBlockID {
 			t.Leaf[i] = b
-			return nil
+			return
 		}
 	}
-	//RequestBlock()
-	return errors.New("missing block")
+	t.Leaf = append(t.Leaf, b)
+
 }
 
 
 func (t* Tree)GetBlockByID(id string)(Block,error){
-	visited := make(map[string]bool)
-	for _,elem := range t.Leaf{
-		for elem.PrevBlockID != t.Sentinel.ID {
-			blockid := elem.ID
-			if (visited[blockid]){
-				break
-			}else {
-				visited[blockid] = true
-				if blockid==id{
-					return elem,nil
-				}
-			}
-
-		}
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+	if val,ok := t.blockmap[id]; ok {
+		return val,nil
 	}
 	return Block{},errors.New("No block with such id found")
 }
 
 func (t* Tree)GetPreviousBlock(id string)(Block,error){
+	t.lock.RLock()
+	defer t.lock.RUnlock()
 	for i,elem := range t.Leaf{
 		if elem.ID == id{
 			return t.Leaf[i],nil
@@ -82,6 +75,8 @@ func (t* Tree)GetPreviousBlock(id string)(Block,error){
 }
 
 func (t *Tree)GetPreviousBlockId()string{
+	t.lock.RLock()
+	defer t.lock.RUnlock()
 	maxterm := 0
 	id := ""
 	for _,elem := range t.Leaf{
@@ -97,9 +92,11 @@ func (t *Tree)PushToHoldBackQueue(b Block){
 	t.holdbackQueue = append(t.holdbackQueue, b)
 }
 
-func (t *Tree)PopFromHoldBackQueue()(Block,error){
-	if len(t.holdbackQueue) == 0{
-		return Block{},errors.New("nothing in hold back queue")
+func (t *Tree)FindBlockByPuzzle(puzzle string)(Block,error){
+	for _,elem := range(t.holdbackQueue){
+		if elem.GetPuzzle() == puzzle {
+			return elem,nil
+		}
 	}
-	return t.holdbackQueue[0],nil
+	return Block{},errors.New("no block found")
 }
