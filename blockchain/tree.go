@@ -96,3 +96,10 @@ func (t *Tree)GetPreviousBlockId()string{
 func (t *Tree)PushToHoldBackQueue(b Block){
 	t.holdbackQueue = append(t.holdbackQueue, b)
 }
+
+func (t *Tree)PopFromHoldBackQueue()(Block,error){
+	if len(t.holdbackQueue) == 0{
+		return Block{},errors.New("nothing in hold back queue")
+	}
+	return t.holdbackQueue[0],nil
+}
