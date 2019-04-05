@@ -23,7 +23,7 @@ func (d *ValueList) Append(v Value) {
 	d.items = append(d.items, v)
 }
 
-// Pop front
+// GetTransactionToCommit front
 func (d *ValueList) Pop(n int) []Value {
 	d.lock.Lock()
 	defer d.lock.Unlock()

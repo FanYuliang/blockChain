@@ -19,7 +19,7 @@ func (s *Server) getFailureDetectionEndpointMetadata(ActionType string) endpoint
 }
 
 func (s *Server) getTransactionEndpointMetadata() endpoints.TransactionMeta {
-	transactionToSend := s.getTransactSubset()
+	transactionToSend := s.Transactions.GetTransactionToCommit(100)
 	tEndpoint := endpoints.TransactionMeta{transactionToSend}
 	return tEndpoint
 }

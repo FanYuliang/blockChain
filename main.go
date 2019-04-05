@@ -48,8 +48,8 @@ func main() {
 
 
 
-	startTimestamp := time.Now().Second()
-	fmt.Println(utils.Concatenate("Launching server ", name, " at ", myAddr, startTimestamp))
+	//startTimestamp := time.Now().Second()
+	fmt.Println(utils.Concatenate("Launching server ", name, " at ", myAddr))
 
 
 	targetConn, err := net.Dial("tcp", serviceAddr)
@@ -69,12 +69,12 @@ func main() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		_ = <-sigs
-		endTimestamp := time.Now().Second()
+		//endTimestamp := time.Now().Second()
 
-		fmt.Println(utils.Concatenate("Ending server ", name, " at ", myServer.Bandwidth, endTimestamp-startTimestamp))
+		//fmt.Println(utils.Concatenate("Ending server ", name, " at ", myServer.Bandwidth, endTimestamp-startTimestamp))
 		fmt.Println("Received signal from user, about to gracefully terminate the server")
 		myServer.Quit()
-		log.Printf(utils.Concatenate("Bandwidth: ", myServer.Bandwidth/float64(endTimestamp-startTimestamp)))
+		//log.Printf(utils.Concatenate("Bandwidth: ", myServer.Bandwidth/float64(endTimestamp-startTimestamp)))
 		log.Println(utils.Concatenate("Message received: ", myServer.MessageReceive))
 		os.Exit(5)
 	}()

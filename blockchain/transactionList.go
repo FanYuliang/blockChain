@@ -5,6 +5,9 @@
 package blockchain
 
 import (
+	"log"
+	"math"
+	"os"
 	"sync"
 )
 
@@ -12,50 +15,89 @@ import (
 
 // TransactionList the set of Items
 type TransactionList struct {
-	items []Transaction
-	transactionIDs map[string]int
-	lock  sync.RWMutex
+	items             []Transaction
+	TransactionStatus map[string]bool
+	lock              sync.RWMutex
 }
 
-// Set adds a new item to the tail of the list
+// Set adds a new item to  the list
 func (d *TransactionList) Append(v Transaction) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	if d.items == nil {
 		d.items = make([]Transaction, 1)
-		d.transactionIDs = make(map[string]int)
+		d.TransactionStatus = make(map[string]bool)
 	}
-	d.items = append(d.items, v)
-	d.transactionIDs[v.ID] = 1
+	targetIndex := d.findPositionUsingBinarySearch(v)
+	d.items = append(d.items[:targetIndex], append([]Transaction{v}, d.items[targetIndex:]...)...)
+	d.TransactionStatus[v.ID] = false
 }
 
-// Pop front
-func (d *TransactionList) Pop(n int) []Transaction {
+func (d *TransactionList)findPositionUsingBinarySearch(v Transaction) int {
+	L := 0
+	R := len(d.items) - 1
+	for {
+		if L > R {
+			break
+		}
+		m := int(math.Floor(float64(L+R)/2.0))
+		if d.items[m].Timestamp < v.Timestamp {
+			L = m + 1
+		} else if d.items[m].Timestamp > v.Timestamp {
+			R = m - 1
+		} else {
+			log.Fatalln("transaction timestamp same, which shouldn't happen...")
+			os.Exit(13)
+		}
+	}
+	return L
+}
+
+// GetTransactionToCommit front
+func (d *TransactionList) GetTransactionToCommit(n int) []Transaction {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+	var res []Transaction
+
+	count := 0
+	for _, tx := range res {
+		if count < n && !d.TransactionStatus[tx.ID] {
+			res = append(res, tx)
+			count += 1
+		}
+	}
+	return res
+}
+
+func (d *TransactionList) CommitTransactions(tx [] Transaction) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
-	var res []Transaction
-	if n < len(d.items) {
-		res = d.items[:n]
-		d.items = d.items[n:]
-	} else {
-		res = d.items
-		d.items = make([]Transaction, 1)
+	for _, tx := range tx {
+		d.TransactionStatus[tx.ID] = true
 	}
-
-	for _, tx := range res {
-		delete(d.transactionIDs, tx.ID)
-	}
-
-	return res
 }
 
 func (d *TransactionList) Size() int {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
-	return len(d.items)
+	return len(d.TransactionStatus)
 }
 
+func (d *TransactionList) UncommittedSize() int {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+	count := 0
+	for _, tx := range d.TransactionStatus {
+		if !tx {
+			count += 1
+		}
+	}
+	return count
+}
+
+
+
 func (d *TransactionList) Has(transactionID string) bool {
- 	_, ok := d.transactionIDs[transactionID]
+ 	_, ok := d.TransactionStatus[transactionID]
 	return ok
 }
