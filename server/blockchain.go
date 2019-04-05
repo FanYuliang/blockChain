@@ -36,26 +36,6 @@ func (s *Server) SolvePuzzle() {
 
 }
 
-func (s *Server) getTransactSubset() [] blockchain.Transaction {
-	/*
-	orig := s.Transactions.GetKys()
-	tempArr := utils.Arange(0, s.Transactions.Size(), 1)
-	shuffledArr := utils.Shuffle(tempArr)
-
-	res := make(map[string]blockchain.Transaction)
-
-	for _, v := range shuffledArr {
-		if len(res) > s.TransactionCap {
-			break
-		}
-		res[orig[v]] = *s.Transactions.Get(orig[v])
-	}
-	return res
-	*/
-	var txList [] blockchain.Transaction
-	return txList
-}
-
 func (s * Server)MergeTransactionList(receivedRequest endpoints.TransactionMeta) {
 	for _, tx := range receivedRequest.Tx {
 		if !s.Transactions.Has(tx.ID) {

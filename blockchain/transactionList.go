@@ -7,6 +7,7 @@ package blockchain
 import (
 	"log"
 	"math"
+	"mp2/utils"
 	"os"
 	"sync"
 )
@@ -95,7 +96,23 @@ func (d *TransactionList) UncommittedSize() int {
 	return count
 }
 
+func (d *TransactionList) GetTransactSubset(num int) [] Transaction {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 
+	tempArr := utils.Arange(0, d.Size(), 1)
+	shuffledArr := utils.Shuffle(tempArr)
+
+	res := make([]Transaction, 1)
+
+	for _, v := range shuffledArr {
+		if len(res) > num {
+			break
+		}
+		res = append(res, d.items[v])
+	}
+	return res
+}
 
 func (d *TransactionList) Has(transactionID string) bool {
  	_, ok := d.TransactionStatus[transactionID]
