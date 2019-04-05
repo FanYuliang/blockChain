@@ -23,6 +23,9 @@ type TransactionList struct {
 
 // Set adds a new item to  the list
 func (d *TransactionList) Append(v Transaction) {
+	if d.Has(v.ID) {
+		return
+	}
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	if d.items == nil {
