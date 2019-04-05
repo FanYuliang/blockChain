@@ -11,8 +11,17 @@ type Endpoint struct {
 	FEndpoint FailureDetectionMeta
 	TEndpoint TransactionMeta
 	BEndpoint BlockMeta
-	REndpoint RequestMissingTransactionMeta
+	REndpoint RequestMissingBlockMeta
 }
+
+
+type RequestMissingBlockMeta struct{
+	Type 					int // 0 request, 1 reply
+	MissingTransactionID 	string
+	RequesterIPaddr 		string
+}
+
+
 
 func (e *Endpoint)  ToBytes() []byte {
 	res, _ := json.Marshal(e)
@@ -28,7 +37,7 @@ func (e *Endpoint)SetEndpointType(endpointTypes ...string) {
 			e.Types = append(e.Types, 1)
 		} else if endpointType == "Block" {
 			e.Types = append(e.Types, 2)
-		} else if endpointType == "RequestMissingTransaction"{
+		} else if endpointType == "HandleMissingTransaction"{
 			e.Types = append(e.Types,3)
 		} else {
 			log.Fatal("Bad endpoint type!")

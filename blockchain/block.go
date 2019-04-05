@@ -12,8 +12,9 @@ type Block struct {
 	PrevBlockID		string
 	TxList 			[] Transaction
 	Sol				string
-	balance 		map[int]int
-	term	  		int
+	Balance 		map[int]int
+	Term	  		int
+
 }
 
 func (b *Block)  Constructor(prevBlockID string)  {

@@ -2,6 +2,9 @@ package server
 
 import (
 	"fmt"
+
+	"mp2/blockchain"
+
 	"mp2/endpoints"
 )
 
@@ -28,6 +31,14 @@ func (s *Server) getTransactionEndpointMetadata() endpoints.TransactionMeta {
 	return tEndpoint
 }
 
-func (s* Server) getRequestMissingTransactionMeta() endpoints.RequestMissingTransactionMeta {
-	return endpoints.RequestMissingTransactionMeta{}
+
+
+func (s* Server) getRequestMissingBlockMeta(id string) endpoints.RequestMissingBlockMeta{
+	missingTransactionMeta := endpoints.RequestMissingBlockMeta{0,id,s.MyAddress}
+	return missingTransactionMeta
+}
+
+func (s *Server) getBlockMeta(b blockchain.Block) endpoints.BlockMeta {
+	blockmeta := endpoints.BlockMeta{b}
+	return blockmeta
 }

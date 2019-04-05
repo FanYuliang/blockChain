@@ -36,6 +36,7 @@ type Server struct {
 	MessageReceive      int
 	ServiceConn         net.Conn
 	BlockChain 			blockchain.Tree
+	verifiedFromService	chan string
 }
 
 func (s *Server) Constructor(name string, introducerIP string, myIP string, serviceConn net.Conn) {
@@ -123,9 +124,42 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 				fmt.Println(transactionMeta)
  				s.MergeTransactionList(transactionMeta)
 			} else if endpointType == "Block" {
+				receivedBlock := endpoint.BEndpoint.Block
+				s.VerifyBlock(receivedBlock)
+				verifiedResult := <-s.verifiedFromService
+				if receivedBlock.Term > s.BlockChain.GetLongestChainTerm() { // block is latest
+					if verifiedResult == "ok" {
+						prevBlock, err := s.BlockChain.GetPreviousBlock(receivedBlock.PrevBlockID)
+						if err != nil { //missing previous block(s), asking for other nodes to resend...
+							s.BlockChain.PushToHoldBackQueue(receivedBlock)
+							s.RequestMissingBlockToNode(receivedBlock.PrevBlockID,s.MyAddress)
+						}else{ // find parent of received block in my blockchain
+							if (s.checkBlockBalance(prevBlock,receivedBlock)){// check whether final transaction sum is correct
+								s.BlockChain.InsertBlock(receivedBlock)
+								s.SendBlock(receivedBlock)
+								//@Todo continue solving puzzles....
+							} else{
+								fmt.Println("block has incorrect sum in it")
+							}
+						}
+					} else{ // verification failed ; report
+						fmt.Println("this block is failed")
+					}
+				}else{ // not latest;
 
-			} else if endpointType == "RequestMissingTransaction"{
+				}
 
+			}else if endpointType == "HandleMissingTransaction"{
+				if endpoint.REndpoint.Type == 0{// request missing transaction
+					item,err := s.BlockChain.GetBlockByID(endpoint.REndpoint.MissingTransactionID)
+					 if err != nil {// not found, disseminate to other nodes
+					 	 s.ForwardMissingBlockToNode(endpoint.REndpoint.MissingTransactionID,endpoint.REndpoint.RequesterIPaddr)
+					 }else{
+						 s.SendMissingBlockToNode(item,endpoint.REndpoint.RequesterIPaddr)
+					 }
+
+
+				}
 			}
 		}
 	}
@@ -186,7 +220,9 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 		} else if messageType == "VERIFY" {
 			status := messageArr[1]
 			if status == "OK" {
-
+				s.verifiedFromService <- "ok"
+			}else {
+				s.verifiedFromService <- "fail"
 			}
 		}
 	}
