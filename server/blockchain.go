@@ -36,7 +36,7 @@ func (s *Server) SolvePuzzle() {
 
 }
 
-func (s * Server)MergeTransactionList(receivedRequest endpoints.TransactionMeta) {
+func (s * Server) MergeTransactionList(receivedRequest endpoints.TransactionMeta) {
 	for _, tx := range receivedRequest.Tx {
 		if !s.Transactions.Has(tx.ID) {
 			log.Println(tx.ID, time.Now().UnixNano())

@@ -1,6 +1,9 @@
 package server
 
-import "mp2/endpoints"
+import (
+	"fmt"
+	"mp2/endpoints"
+)
 
 func (s *Server) getFailureDetectionEndpointMetadata(ActionType string) endpoints.FailureDetectionMeta {
 	num := int(float32(len(s.MembershipList.List))*0.3)
@@ -21,6 +24,7 @@ func (s *Server) getFailureDetectionEndpointMetadata(ActionType string) endpoint
 func (s *Server) getTransactionEndpointMetadata() endpoints.TransactionMeta {
 	transactionToSend := s.Transactions.GetTransactionToCommit(100)
 	tEndpoint := endpoints.TransactionMeta{transactionToSend}
+	fmt.Println("tEndpoint: ", tEndpoint)
 	return tEndpoint
 }
 

@@ -26,11 +26,16 @@ func (d *TransactionList) Append(v Transaction) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	if d.items == nil {
-		d.items = make([]Transaction, 1)
+		d.items = make([]Transaction, 0)
 		d.TransactionStatus = make(map[string]bool)
 	}
 	targetIndex := d.findPositionUsingBinarySearch(v)
-	d.items = append(d.items[:targetIndex], append([]Transaction{v}, d.items[targetIndex:]...)...)
+
+	if targetIndex >= 0 {
+		d.items = append(d.items[:targetIndex], append([]Transaction{v}, d.items[targetIndex:]...)...)
+	} else {
+		d.items = append(d.items, v)
+	}
 	d.TransactionStatus[v.ID] = false
 }
 
@@ -59,9 +64,8 @@ func (d *TransactionList) GetTransactionToCommit(n int) []Transaction {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	var res []Transaction
-
 	count := 0
-	for _, tx := range res {
+	for _, tx := range d.items {
 		if count < n && !d.TransactionStatus[tx.ID] {
 			res = append(res, tx)
 			count += 1
@@ -103,7 +107,7 @@ func (d *TransactionList) GetTransactSubset(num int) [] Transaction {
 	tempArr := utils.Arange(0, d.Size(), 1)
 	shuffledArr := utils.Shuffle(tempArr)
 
-	res := make([]Transaction, 1)
+	res := make([]Transaction, 0)
 
 	for _, v := range shuffledArr {
 		if len(res) > num {
