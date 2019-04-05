@@ -90,17 +90,18 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 			if endpointType == "FailureDetection" {
 				//Customize different action
 				resultMap := endpoint.FEndpoint
-				if resultMap.Type == 0 {
+				if resultMap.Type == 1 {
 					//received join
-					//fmt.Println("Received Join from ", resultMap.IpAddress)
+					fmt.Println("Received Join from ", resultMap.IpAddress)
+					fmt.Println(endpoint.GetEndpointTypes())
 					s.MergeList(resultMap)
 					s.Ack(resultMap.IpAddress)
-				} else if resultMap.Type == 1 {
+				} else if resultMap.Type == 2 {
 					//received ping
 					//fmt.Println("Received Ping from ", resultMap.IpAddress)
 					s.MergeList(resultMap)
 					s.Ack(resultMap.IpAddress)
-				} else if resultMap.Type == 2 {
+				} else if resultMap.Type == 3 {
 					//received ack
 					//fmt.Println("Received Ack from ", resultMap.IpAddress)
 					for _, entry := range s.MembershipList.List {
@@ -111,20 +112,20 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 					}
 					s.MergeList(resultMap)
 					//log.Println("After merging, server's membership list", myServer.MembershipList.List)
-				} else if resultMap.Type == 3 {
+				} else if resultMap.Type == 4 {
 					//fmt.Println("Received Quit from ", resultMap.IpAddress)
 					//received leave
 					//s.MembershipList.RemoveNode(incomingIP)
 					s.MergeList(resultMap)
 				}
 			} else if endpointType == "Transaction" {
-				fmt.Println("Received new transaction: ", )
+				//fmt.Println("Received new transaction: ", )
 				transactionMeta := endpoint.TEndpoint
-				fmt.Println(transactionMeta)
+				//fmt.Println(transactionMeta)
  				s.MergeTransactionList(transactionMeta)
 			} else if endpointType == "Block" {
 				receivedBlock := endpoint.BEndpoint.Block
-
+				fmt.Println("Received Block: ", receivedBlock)
 				if !s.BlockChain.CheckHasReplicateBlocks(receivedBlock){// if has replica, drop the block
 					s.BlockChain.PushToHoldBackQueue(receivedBlock)
 					s.VerifyBlock(receivedBlock)
@@ -194,7 +195,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			fmt.Println("puzzleSol: ", puzzleSol)
 			s.CurrBlock.Sol = puzzleSol
 			s.SendBlock(s.CurrBlock)
-			go s.AskServiceToSolvePuzzle(5 * time.Second)
+			go s.AskServiceToSolvePuzzle(0 * time.Second)
 		} else if messageType == "VERIFY" {
 			status := messageArr[1]
 			receivedBlock,_ := s.BlockChain.FindBlockInHoldBackQueueByPuzzle(messageArr[2])
@@ -213,7 +214,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 							fmt.Println("block has incorrect sum in it")
 						}
 					}
-					go s.AskServiceToSolvePuzzle(5 * time.Second)
+					go s.AskServiceToSolvePuzzle(0 * time.Second)
 				} else{ // verification failed ; report
 					fmt.Println("this block is failed")
 				}
@@ -234,7 +235,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 func (s *Server) sendMessageWithUDP(endpoint endpoints.Endpoint, ipAddress string) {
 	//fmt.Println("ipAddress: ", ipAddress)
 	arr := strings.Split(ipAddress, ":")
-
+	fmt.Println(arr)
 	myPort, err := strconv.Atoi(arr[1])
 	utils.CheckError(err)
 

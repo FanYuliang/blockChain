@@ -11,13 +11,13 @@ type FailureDetectionMeta struct {
 
 func (f *FailureDetectionMeta) EncodeFailureDetectionActionType(endpointType string) int {
 	if endpointType == "Join" {
-		return 0
-	} else if endpointType == "Ping" {
 		return 1
-	} else if endpointType == "Ack" {
+	} else if endpointType == "Ping" {
 		return 2
-	} else if endpointType == "Quit" {
+	} else if endpointType == "Ack" {
 		return 3
+	} else if endpointType == "Quit" {
+		return 4
 	}
 	return -1
 }
