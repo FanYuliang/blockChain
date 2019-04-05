@@ -17,7 +17,7 @@ import (
 // TransactionList the set of Items
 type TransactionList struct {
 	items             []Transaction
-	TransactionStatus map[string]bool
+	TransactionStatus map[string]int // 0: uncommitted, 1: committed, 2: invalid
 	lock              sync.RWMutex
 }
 
@@ -27,7 +27,7 @@ func (d *TransactionList) Append(v Transaction) {
 	defer d.lock.Unlock()
 	if d.items == nil {
 		d.items = make([]Transaction, 0)
-		d.TransactionStatus = make(map[string]bool)
+		d.TransactionStatus = make(map[string]int)
 	}
 	targetIndex := d.findPositionUsingBinarySearch(v)
 
@@ -36,7 +36,7 @@ func (d *TransactionList) Append(v Transaction) {
 	} else {
 		d.items = append(d.items, v)
 	}
-	d.TransactionStatus[v.ID] = false
+	d.TransactionStatus[v.ID] = 0
 }
 
 func (d *TransactionList)findPositionUsingBinarySearch(v Transaction) int {
@@ -66,7 +66,7 @@ func (d *TransactionList) GetTransactionToCommit(n int) []Transaction {
 	var res []Transaction
 	count := 0
 	for _, tx := range d.items {
-		if count < n && !d.TransactionStatus[tx.ID] {
+		if count < n && d.TransactionStatus[tx.ID] == 0 {
 			res = append(res, tx)
 			count += 1
 		}
@@ -78,7 +78,7 @@ func (d *TransactionList) CommitTransactions(tx [] Transaction) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	for _, tx := range tx {
-		d.TransactionStatus[tx.ID] = true
+		d.TransactionStatus[tx.ID] = 1
 	}
 }
 
@@ -93,7 +93,7 @@ func (d *TransactionList) UncommittedSize() int {
 	defer d.lock.RUnlock()
 	count := 0
 	for _, tx := range d.TransactionStatus {
-		if !tx {
+		if tx == 0 {
 			count += 1
 		}
 	}
@@ -119,6 +119,25 @@ func (d *TransactionList) GetTransactSubset(num int) [] Transaction {
 }
 
 func (d *TransactionList) Has(transactionID string) bool {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
  	_, ok := d.TransactionStatus[transactionID]
 	return ok
+}
+
+func (d *TransactionList) SetTransaction(transaction Transaction, status string) bool {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	_, ok := d.TransactionStatus[transaction.ID]
+	if ok {
+		if status == "uncommitted" {
+			d.TransactionStatus[transaction.ID] = 0
+		} else if status == "committed" {
+			d.TransactionStatus[transaction.ID] = 1
+		} else if status == "invalid" {
+			d.TransactionStatus[transaction.ID] = 2
+		}
+	}
+	return false
+
 }
