@@ -14,10 +14,13 @@ type Tree struct{
 }
 
 func (t *Tree)Constructor(){
-
 	var sentinelBlock Block
-	sentinelBlock.Constructor("-1")
-	t.blockmap["-1"] = sentinelBlock
+	initBalance := make(map[int]int)
+	initBalance[0] = 0
+	sentinelID := "-1"
+	sentinelBlock.Constructor(sentinelID, initBalance)
+	t.blockmap = make(map[string]Block)
+	t.blockmap[sentinelID] = sentinelBlock
 	t.Leaf = make([]Block,0)
 }
 
@@ -80,7 +83,7 @@ func (t *Tree)GetPreviousBlockId()string{
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 	maxterm := 0
-	id := ""
+	id := "-1"
 	for _,elem := range t.Leaf{
 		if elem.Term > maxterm{
 			maxterm = elem.Term
@@ -88,6 +91,13 @@ func (t *Tree)GetPreviousBlockId()string{
 		}
 	}
 	return id
+}
+
+func (t* Tree)GetBalance() map[int]int {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+	longestLeafID := t.GetPreviousBlockId()
+	return t.blockmap[longestLeafID].Balance
 }
 
 func (t *Tree)PushToHoldBackQueue(b Block){

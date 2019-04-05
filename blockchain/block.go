@@ -17,12 +17,12 @@ type Block struct {
 
 }
 
-func (b *Block)  Constructor(prevBlockID string)  {
+func (b *Block)  Constructor(prevBlockID string, prevBalance map[int]int)  {
 	b.ID = utils.Concatenate(rand.Intn(1000000), int(time.Now().Unix()))
 	b.TxList = make([] Transaction, 0)
 	b.PrevBlockID = prevBlockID
 	b.Balance = make(map[int]int)
-	b.Balance[0] = 0
+	b.Balance = prevBalance
 }
 
 func (b *Block)  ToBytes() []byte {
