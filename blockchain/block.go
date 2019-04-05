@@ -21,6 +21,8 @@ func (b *Block)  Constructor(prevBlockID string)  {
 	b.ID = utils.Concatenate(rand.Intn(1000000), int(time.Now().Unix()))
 	b.TxList = make([] Transaction, 0)
 	b.PrevBlockID = prevBlockID
+	b.Balance = make(map[int]int)
+	b.Balance[0] = 0
 }
 
 func (b *Block)  ToBytes() []byte {
@@ -30,14 +32,14 @@ func (b *Block)  ToBytes() []byte {
 
 func (b *Block) AddTransaction(transaction Transaction) bool {
 	//not support for concurrency
-	sourceBalance, ok1 := b.balance[transaction.SNum]
-	_, ok2 := b.balance[transaction.DNum]
-	if ok1 && sourceBalance >= transaction.Amount {
-		b.balance[transaction.SNum] -= transaction.Amount
+	sourceBalance, ok1 := b.Balance[transaction.SNum]
+	_, ok2 := b.Balance[transaction.DNum]
+	if ok1 && (sourceBalance >= transaction.Amount || transaction.SNum == 0) {
+		b.Balance[transaction.SNum] -= transaction.Amount
 		if !ok2 {
-			b.balance[transaction.DNum] = 0
+			b.Balance[transaction.DNum] = 0
 		}
-		b.balance[transaction.DNum] += transaction.Amount
+		b.Balance[transaction.DNum] += transaction.Amount
 		b.TxList = append(b.TxList, transaction)
 		return true
 	}
