@@ -9,13 +9,11 @@ type Tree struct{
 }
 
 func (t *Tree)Constructor(){
-	var tx = make([]Transaction,0)
-	var m = make(map[string]int)
-	var b = Block{"", "", tx, "", 0, m}
-	t.Sentinel = b
+	var sentinelBlock Block
+	sentinelBlock.Constructor([]Transaction{}, "-1")
+	t.Sentinel = sentinelBlock
 	t.Leaf = make([]Block,0)
 }
-
 
 func (t *Tree)InsertBlock(b Block){
 
@@ -26,7 +24,6 @@ func (t *Tree)InsertBlock(b Block){
 		}
 	}
 	//RequestBlock()
-
 }
 
 func (t* Tree)GetPreviousBlockID() string{
