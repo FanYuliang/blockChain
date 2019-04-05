@@ -9,7 +9,6 @@ import (
 	"mp2/config"
 	"mp2/endpoints"
 	"mp2/node_membership"
-	"mp2/thread_safe_structures/cclist"
 	"mp2/utils"
 	"net"
 	"os"
@@ -33,7 +32,7 @@ type Server struct {
 	Bandwidth           float64
 	BandwidthLock       sync.Mutex
 	CurrBlock 			blockchain.Block
-	Transactions        *cclist.TransactionList
+	Transactions        *blockchain.TransactionList
 	MessageReceive      int
 	ServiceConn         net.Conn
 	BlockChain 			blockchain.Tree
@@ -57,7 +56,7 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string, serv
 	s.TransactionCap = myConfig.TransacCap
 	s.tDetection = myConfig.DetectionTimeout
 	s.tSuspect = myConfig.SuspiciousTimeout
-	s.Transactions = new(cclist.TransactionList)
+	s.Transactions = new(blockchain.TransactionList)
 	s.tFailure = myConfig.FailureTimeout
 	s.pingNum = myConfig.PingNum
 	s.Name = name
@@ -119,7 +118,8 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 					s.MergeList(resultMap)
 				}
 			} else if endpointType == "Transaction" {
-
+				transactionMeta := endpoint.TEndpoint
+				s.MergeTransactionList(transactionMeta)
 			} else if endpointType == "Block" {
 
 			} else if endpointType == "RequestMissingTransaction"{

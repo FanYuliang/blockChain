@@ -2,10 +2,9 @@
 // Any changes will be lost if this file is regenerated.
 // see https://github.com/cheekybits/genny
 
-package cclist
+package blockchain
 
 import (
-	"mp2/blockchain"
 	"sync"
 )
 
@@ -13,17 +12,17 @@ import (
 
 // TransactionList the set of Items
 type TransactionList struct {
-	items []blockchain.Transaction
+	items []Transaction
 	transactionIDs map[string]int
 	lock  sync.RWMutex
 }
 
 // Set adds a new item to the tail of the list
-func (d *TransactionList) Append(v blockchain.Transaction) {
+func (d *TransactionList) Append(v Transaction) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	if d.items == nil {
-		d.items = make([]blockchain.Transaction, 1)
+		d.items = make([]Transaction, 1)
 		d.transactionIDs = make(map[string]int)
 	}
 	d.items = append(d.items, v)
@@ -31,16 +30,16 @@ func (d *TransactionList) Append(v blockchain.Transaction) {
 }
 
 // Pop front
-func (d *TransactionList) Pop(n int) []blockchain.Transaction {
+func (d *TransactionList) Pop(n int) []Transaction {
 	d.lock.Lock()
 	defer d.lock.Unlock()
-	var res []blockchain.Transaction
+	var res []Transaction
 	if n < len(d.items) {
 		res = d.items[:n]
 		d.items = d.items[n:]
 	} else {
 		res = d.items
-		d.items = make([]blockchain.Transaction, 1)
+		d.items = make([]Transaction, 1)
 	}
 
 	for _, tx := range res {

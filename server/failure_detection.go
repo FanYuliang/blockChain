@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"log"
 	"mp2/endpoints"
 	"mp2/node_membership"
 	"mp2/utils"
@@ -125,16 +124,6 @@ func (s *Server) MergeList(receivedRequest endpoints.FailureDetectionMeta) {
 		}
 	}
 }
-
-func (s * Server)MergeTransactionList(receivedRequest endpoints.TransactionMeta) {
-	for _, tx := range receivedRequest.Tx {
-		if !s.Transactions.Has(tx.ID) {
-			log.Println(tx.ID, time.Now().UnixNano())
-			s.Transactions.Append(tx)
-		}
-	}
-}
-
 
 func (s *Server) checkMembershipList() {
 	currTime := time.Now().Unix()

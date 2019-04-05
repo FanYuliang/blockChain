@@ -2,7 +2,9 @@ package server
 
 import (
 	"fmt"
+	"log"
 	"mp2/blockchain"
+	"mp2/endpoints"
 	"mp2/utils"
 	"time"
 )
@@ -53,3 +55,13 @@ func (s *Server) getTransactSubset() [] blockchain.Transaction {
 	var txList [] blockchain.Transaction
 	return txList
 }
+
+func (s * Server)MergeTransactionList(receivedRequest endpoints.TransactionMeta) {
+	for _, tx := range receivedRequest.Tx {
+		if !s.Transactions.Has(tx.ID) {
+			log.Println(tx.ID, time.Now().UnixNano())
+			s.Transactions.Append(tx)
+		}
+	}
+}
+
