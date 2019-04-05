@@ -121,7 +121,7 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 				fmt.Println("Received new transaction: ", )
 				transactionMeta := endpoint.TEndpoint
 				fmt.Println(transactionMeta)
-				s.MergeTransactionList(transactionMeta)
+ 				s.MergeTransactionList(transactionMeta)
 			} else if endpointType == "Block" {
 
 			} else if endpointType == "RequestMissingTransaction"{

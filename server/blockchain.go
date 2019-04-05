@@ -17,7 +17,7 @@ func (s * Server) AskServiceToSolvePuzzle() {
 	s.CurrBlock = blockchain.Block{}
 	transactionToCommit := s.Transactions.GetTransactionToCommit(100)
 	prevBlockID := s.BlockChain.GetPreviousBlockID()
-	s.CurrBlock.Constructor(transactionToCommit, prevBlockID)
+	s.CurrBlock.Constructor(prevBlockID)
 
 	currPuzzleHolder := new(blockchain.Puzzle)
 	currPuzzleHolder.Constructor(prevBlockID, s.CurrBlock.TxList)
