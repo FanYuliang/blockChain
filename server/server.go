@@ -202,7 +202,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 				if status == "ok" {
 					prevBlock, err := s.BlockChain.GetBlockFromLeaf(receivedBlock.PrevBlockID)
 					if err != nil { //missing previous block(s), asking for other nodes to resend...
-						s.BlockChain.PushToHoldBackQueue(receivedBlock)
+						//s.BlockChain.PushToHoldBackQueue(receivedBlock)
 						s.RequestMissingBlockToNode(receivedBlock.PrevBlockID,s.MyAddress)
 					}else{ // find parent of received block in my blockchain
 						if (s.checkBlockBalance(prevBlock,receivedBlock)){// check whether final transaction sum is correct
