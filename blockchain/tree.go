@@ -7,19 +7,23 @@ import (
 )
 
 type Tree struct{
-	blockmap		map[string]Block
-	Leaf			[]Block
-	lock 			sync.RWMutex
-	holdbackQueue	[]Block
+	blockmap		*BlockMap
+	Leaf			*BlockMap
+	holdbackQueue	*BlockList
 
 }
 
 func (t *Tree)Constructor(){
 
 	var sentinelBlock Block
-	sentinelBlock.Constructor("-1")
-	t.blockmap["-1"] = sentinelBlock
-	t.Leaf = make([]Block,0)
+
+	initBalance := make(map[int]int)
+	initBalance[0] = 0
+	sentinelBlock.Constructor("-1",initBalance)
+	t.blockmap = new(BlockMap)
+	t.blockmap.Set("-1",sentinelBlock)
+	t.Leaf = new(BlockMap)
+	t.holdbackQueue = new(BlockList)
 }
 
 //func (t *Tree)InsertRoot(b Block){
@@ -29,10 +33,8 @@ func (t *Tree)Constructor(){
 //}
 
 func (t *Tree) GetTermOfLongestChain()int{
-	t.lock.RLock()
-	defer t.lock.RUnlock()
 	max := 0
-	for _,elem := range(t.Leaf){
+	for _,elem := range(t.Leaf.GetVals()){
 		if	elem.Term > max{
 			max = elem.Term
 		}
@@ -43,46 +45,38 @@ func (t *Tree) GetTermOfLongestChain()int{
 
 
 func (t *Tree)InsertBlock(b Block){
-	t.lock.Lock()
-	defer t.lock.Unlock()
-	t.blockmap[b.ID] = b
-	for i,elem := range t.Leaf {
-		if elem.ID == b.PrevBlockID {
-			t.Leaf[i] = b
-			return
-		}
-	}
-	t.Leaf = append(t.Leaf, b)
+	t.blockmap.Delete(b.PrevBlockID)
+	t.blockmap.Set(b.ID,b)
 
 }
 
 
 func (t* Tree)GetBlockByID(id string)(Block,error){
-	t.lock.RLock()
-	defer t.lock.RUnlock()
-	if val,ok := t.blockmap[id]; ok {
-		return val,nil
+
+	//if val,ok := t.blockmap[id]; ok {
+	//	//	return val,nil
+	//	//}
+	//	//return Block{},errors.New("No block with such id found")
+	if t.blockmap.Has(id) {
+		return t.blockmap.Get(id),nil
 	}
-	return Block{},errors.New("No block with such id found")
+	return Block{},errors.New("Not found")
 }
 
-func (t* Tree)GetPreviousBlock(id string)(Block,error){
-	t.lock.RLock()
-	defer t.lock.RUnlock()
-	for i,elem := range t.Leaf{
-		if elem.ID == id{
-			return t.Leaf[i],nil
-		}
+func (t* Tree)GetBlockFromLeaf(id string)(Block,error){
+
+	if t.Leaf.Has(id) {
+		return t.Leaf.Get(id),nil
 	}
+
 	return Block{},errors.New("No such block")
 }
 
 func (t *Tree)GetPreviousBlockId()string{
-	t.lock.RLock()
-	defer t.lock.RUnlock()
+
 	maxterm := 0
 	id := ""
-	for _,elem := range t.Leaf{
+	for _,elem := range t.Leaf.GetVals(){
 		if elem.Term > maxterm{
 			maxterm = elem.Term
 			id = elem.ID
@@ -92,11 +86,11 @@ func (t *Tree)GetPreviousBlockId()string{
 }
 
 func (t *Tree)PushToHoldBackQueue(b Block){
-	t.holdbackQueue = append(t.holdbackQueue, b)
+	t.holdbackQueue.Append(b)
 }
 
 func (t *Tree)FindBlockInHoldBackQueueByPuzzle(puzzle string)(Block,error){
-	for _,elem := range(t.holdbackQueue){
+	for _,elem := range(t.holdbackQueue.GetAll()){
 		if elem.GetPuzzle() == puzzle {
 			return elem,nil
 		}
@@ -105,7 +99,7 @@ func (t *Tree)FindBlockInHoldBackQueueByPuzzle(puzzle string)(Block,error){
 }
 
 func (t *Tree) Has(b Block)bool{
-	for _,elem := range t.holdbackQueue{
+	for _,elem := range t.holdbackQueue.GetAll(){
 		if b.ID == elem.ID{
 			return true
 		}
@@ -119,13 +113,7 @@ func (t *Tree) Has(b Block)bool{
 }
 
 func (t *Tree) RemoveBlockFromQueue(b Block){
-	for i,elem := range t.holdbackQueue{
-		if elem.ID == b.ID {
-			t.holdbackQueue[i], t.holdbackQueue[len(t.holdbackQueue)-1] = t.holdbackQueue[len(t.holdbackQueue)-1] ,t.holdbackQueue[i]
-			t.holdbackQueue = t.holdbackQueue[:len(t.holdbackQueue)-1]
-			return
-		}
-	}
+	t.holdbackQueue.Delete(b)
 }
 
 

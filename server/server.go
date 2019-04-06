@@ -201,7 +201,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			receivedBlock,_ := s.BlockChain.FindBlockInHoldBackQueueByPuzzle(messageArr[2])
 			if receivedBlock.Term > s.BlockChain.GetTermOfLongestChain() { // block is latest
 				if status == "ok" {
-					prevBlock, err := s.BlockChain.GetPreviousBlock(receivedBlock.PrevBlockID)
+					prevBlock, err := s.BlockChain.GetBlockFromLeaf(receivedBlock.PrevBlockID)
 					if err != nil { //missing previous block(s), asking for other nodes to resend...
 						s.BlockChain.PushToHoldBackQueue(receivedBlock)
 						s.RequestMissingBlockToNode(receivedBlock.PrevBlockID,s.MyAddress)
