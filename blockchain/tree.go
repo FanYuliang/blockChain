@@ -44,10 +44,10 @@ func (t *Tree) GetTermOfLongestChain()int{
 
 
 
-func (t *Tree)InsertBlock(b Block){
-	t.blockmap.Delete(b.PrevBlockID)
+func (t *Tree)InsertBlock(b Block){// Add the block into leaf; set it in blockmap
 	t.blockmap.Set(b.ID,b)
-
+	t.Leaf.Delete(b.PrevBlockID)
+	t.Leaf.Set(b.PrevBlockID,b)
 }
 
 
@@ -117,18 +117,27 @@ func (t *Tree) RemoveBlockFromQueue(b Block){
 }
 
 
-func (t *Tree)GetCommitedTransaction(b Block)TransactionList {
+func (t *Tree)GetCommitedTransaction(b Block)[]Transaction {
 	var txmap= make(map[string]int)
-	var ret= TransactionList{}
+	var ret= make([]Transaction,2000)
 	for b.PrevBlockID != "-1" {
 		for _, elem := range b.TxList {
 			if _, ok := txmap[elem.ID]; ok {
 				fmt.Println("repeated transaction!!!", elem.ID)
 			} else {
 				txmap[elem.ID] = 1
-				ret.Append(elem)
+				ret = append(ret, elem)
 			}
 		}
 	}
 	return ret
+}
+
+func (t *Tree)GetBlockByPrevBlockInQueue(id string)(Block,error){
+	for _,elem := range t.holdbackQueue.GetAll(){
+		if id == elem.PrevBlockID{
+			return elem,nil
+		}
+	}
+	return Block{},errors.New("No satisfactory block has this prevId!")
 }

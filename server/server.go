@@ -138,8 +138,6 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 					 }else{
 						 s.SendMissingBlockToNode(item,endpoint.REndpoint.RequesterIPaddr)
 					 }
-
-
 				}
 			}
 		}
@@ -208,12 +206,8 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 					}else{ // find parent of received block in my blockchain
 						if (s.checkBlockBalance(prevBlock,receivedBlock)){// check whether final transaction sum is correct
 							s.BlockChain.InsertBlock(receivedBlock)
-
-							totalTxlist := s.BlockChain.GetCommitedTransaction(receivedBlock)
-							for i,elem := range totalTxlist {
-								s.Transactions
-							}
-
+							s.BlockChain.RemoveBlockFromQueue(receivedBlock)
+							s.CommitTransactionInLongestChain(receivedBlock)// set all transactions in longest chain as committed
 						} else{
 							fmt.Println("block has incorrect sum in it")
 						}
@@ -225,12 +219,13 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			}else{ // not latest;
 				prevblock,err := s.BlockChain.GetBlockByID(receivedBlock.PrevBlockID)
 				if err != nil {// not found
+					s.BlockChain.PushToHoldBackQueue(prevblock)
 					s.RequestMissingBlockToNode(prevblock.ID,s.MyAddress)
 				}else{
 					s.BlockChain.InsertBlock(receivedBlock)
+					s.AddBlockToChainFromQueue(receivedBlock)
 				}
 			}
-			s.BlockChain.RemoveBlockFromQueue(receivedBlock)
 		}
 	}
 }
@@ -257,6 +252,23 @@ func (s *Server) sendMessageWithUDP(endpoint endpoints.Endpoint, ipAddress strin
 	utils.CheckError(err)
 }
 
+func (s *Server)CommitTransactionInLongestChain(receivedBlock blockchain.Block){
+	totalTxlist := s.BlockChain.GetCommitedTransaction(receivedBlock)
+	for _,elem := range totalTxlist {
+		if s.Transactions.Has(elem.ID) {
+			s.Transactions.SetTransaction(elem,"committed")
+		}
+	}
+}
 
-
-
+func (s *Server)AddBlockToChainFromQueue(receivedBlock blockchain.Block){
+	s.BlockChain.InsertBlock(receivedBlock)
+	for {
+		if b,err := s.BlockChain.GetBlockByPrevBlockInQueue(receivedBlock.ID);err==nil {// found the block, continue put next block into chain
+			s.BlockChain.InsertBlock(b)
+			s.BlockChain.RemoveBlockFromQueue(receivedBlock)
+		}else{// can't find next block of the received block; break.
+			break
+		}
+	}
+}
