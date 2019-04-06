@@ -220,11 +220,13 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			}else{ // not latest;
 				prevblock,err := s.BlockChain.GetBlockByID(receivedBlock.PrevBlockID)
 				if err != nil {// not found
-					s.BlockChain.PushToHoldBackQueue(prevblock)
+					//s.BlockChain.PushToHoldBackQueue(prevblock)
 					s.RequestMissingBlockToNode(prevblock.ID,s.MyAddress)
 				}else{
 					s.BlockChain.InsertBlock(receivedBlock)
 					s.AddBlockToChainFromQueue(receivedBlock)
+					longestleaf := s.BlockChain.GetLeafBlockOfLongestChain()
+					s.CommitTransactionInLongestChain(longestleaf)// commit transactions in the longest chain
 				}
 			}
 		}
@@ -268,6 +270,7 @@ func (s *Server)AddBlockToChainFromQueue(receivedBlock blockchain.Block){
 		if b,err := s.BlockChain.GetBlockByPrevBlockInQueue(receivedBlock.ID);err==nil {// found the block, continue put next block into chain
 			s.BlockChain.InsertBlock(b)
 			s.BlockChain.RemoveBlockFromQueue(receivedBlock)
+			receivedBlock = b // recurse forward
 		}else{// can't find next block of the received block; break.
 			break
 		}
