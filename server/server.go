@@ -192,6 +192,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			fmt.Println("puzzleInput: ", puzzleInput)
 			fmt.Println("puzzleSol: ", puzzleSol)
 			s.CurrBlock.Sol = puzzleSol
+			s.BlockChain.InsertBlock(s.CurrBlock)
 			s.SendBlock(s.CurrBlock)
 			go s.AskServiceToSolvePuzzle(0 * time.Second)
 		} else if messageType == "VERIFY" {

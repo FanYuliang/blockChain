@@ -15,9 +15,9 @@ func (s * Server) AskServiceToSolvePuzzle(waitTime time.Duration) {
 
 	//prepare puzzle and current block
 	s.CurrBlock = blockchain.Block{}
-	transactionToCommit := s.Transactions.GetTransactionToCommit(100)
-	prevBlockID := s.BlockChain.GetPreviousBlockId()
-	s.CurrBlock.Constructor(prevBlockID)
+	transactionToCommit := s.Transactions.GetTransactionToCommit(20)
+	leafBlock := s.BlockChain.GetLeafBlockOfLongestChain()
+	s.CurrBlock.Constructor(leafBlock.ID, leafBlock.Balance, leafBlock.Term + 1)
 	for _, tx := range transactionToCommit {
 		ok := s.CurrBlock.AddTransaction(tx)
 		if ok {
@@ -26,6 +26,7 @@ func (s * Server) AskServiceToSolvePuzzle(waitTime time.Duration) {
 			s.Transactions.SetTransaction(tx, "invalid")
 		}
 	}
+	fmt.Println("current block: ", s.CurrBlock)
 	puzzleToSend := s.CurrBlock.GetPuzzle()
 	_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("SOLVE ", puzzleToSend, "\n"))
 	utils.CheckError(err)
