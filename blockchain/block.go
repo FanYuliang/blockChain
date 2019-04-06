@@ -17,8 +17,9 @@ type Block struct {
 
 }
 
-func (b *Block)  Constructor(prevBlockID string, prevBalance map[int]int)  {
+func (b *Block)  Constructor(prevBlockID string, prevBalance map[int]int, term int)  {
 	b.ID = utils.Concatenate(rand.Intn(1000000), int(time.Now().Unix()))
+	b.Term = term
 	b.TxList = make([] Transaction, 0)
 	b.PrevBlockID = prevBlockID
 	b.Balance = make(map[int]int)

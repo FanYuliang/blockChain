@@ -209,12 +209,12 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 					}else{ // find parent of received block in my blockchain
 						if (s.checkBlockBalance(prevBlock,receivedBlock)){// check whether final transaction sum is correct
 							s.BlockChain.InsertBlock(receivedBlock)
-
-							totalTxlist := s.BlockChain.GetCommitedTransaction(receivedBlock)
+/*
+							totalTxlist := s.BlockChain.GetCommittedTransaction(receivedBlock)
 							for i,elem := range totalTxlist {
 								s.Transactions
 							}
-
+*/
 						} else{
 							fmt.Println("block has incorrect sum in it")
 						}

@@ -6,31 +6,27 @@ import (
 )
 
 type Tree struct{
-	blockmap		*BlockMap
-	Leaf			*BlockMap
-	holdbackQueue	*BlockList
+	blockmap      *BlockMap
+	leaf          *BlockMap
+	holdbackQueue *BlockList
 }
 
 func (t *Tree)Constructor(){
 	var sentinelBlock Block
 	initBalance := make(map[int]int)
 	initBalance[0] = 0
-	sentinelBlock.Constructor("-1",initBalance)
+	sentinelBlock.Constructor("0",initBalance, 0)
+	sentinelBlock.ID = "-1"
 	t.blockmap = new(BlockMap)
-	t.blockmap.Set("-1",sentinelBlock)
-	t.Leaf = new(BlockMap)
+	t.blockmap.Set(sentinelBlock.ID,sentinelBlock)
+	t.leaf = new(BlockMap)
+	t.leaf.Set(sentinelBlock.ID, sentinelBlock)
 	t.holdbackQueue = new(BlockList)
 }
 
-//func (t *Tree)InsertRoot(b Block){
-//	var bl = Block{}
-//	t.Sentinel = bl
-//	t.Leaf = make([]Block,0)
-//}
-
 func (t *Tree) GetTermOfLongestChain()int{
 	max := 0
-	for _,elem := range(t.Leaf.GetVals()){
+	for _,elem := range t.leaf.GetVals(){
 		if	elem.Term > max{
 			max = elem.Term
 		}
@@ -38,14 +34,11 @@ func (t *Tree) GetTermOfLongestChain()int{
 	return max
 }
 
-
-
 func (t *Tree)InsertBlock(b Block){
-	t.blockmap.Delete(b.PrevBlockID)
-	t.blockmap.Set(b.ID,b)
-
+	t.leaf.Delete(b.PrevBlockID)
+	t.leaf.Set(b.ID,b)
+	t.blockmap.Set(b.ID, b)
 }
-
 
 func (t* Tree)GetBlockByID(id string)(Block,error){
 	if t.blockmap.Has(id) {
@@ -56,30 +49,24 @@ func (t* Tree)GetBlockByID(id string)(Block,error){
 
 func (t* Tree)GetBlockFromLeaf(id string)(Block,error){
 
-	if t.Leaf.Has(id) {
-		return t.Leaf.Get(id),nil
+	if t.leaf.Has(id) {
+		return t.leaf.Get(id),nil
 	}
 
 	return Block{},errors.New("No such block")
 }
 
-func (t *Tree)GetPreviousBlockId()string{
-
+func (t *Tree) GetLeafBlockOfLongestChain() Block{
 	maxterm := 0
 	id := ""
-	for _,elem := range t.Leaf.GetVals(){
-		if elem.Term > maxterm{
+	for _,elem := range t.leaf.GetVals(){
+		if elem.Term >= maxterm{
 			maxterm = elem.Term
 			id = elem.ID
 		}
 	}
-	return id
-}
-
-func (t* Tree)GetBalance() map[int]int {
-	longestLeafID := t.GetPreviousBlockId()
-	block := t.blockmap.Get(longestLeafID)
-	return block.Balance
+	fmt.Println("Leaf:", t.leaf.GetKys())
+	return t.leaf.Get(id)
 }
 
 func (t *Tree)PushToHoldBackQueue(b Block){
@@ -87,7 +74,7 @@ func (t *Tree)PushToHoldBackQueue(b Block){
 }
 
 func (t *Tree)FindBlockInHoldBackQueueByPuzzle(puzzle string)(Block,error){
-	for _,elem := range(t.holdbackQueue.GetAll()){
+	for _,elem := range t.holdbackQueue.GetAll(){
 		if elem.GetPuzzle() == puzzle {
 			return elem,nil
 		}
@@ -113,8 +100,7 @@ func (t *Tree) RemoveBlockFromQueue(b Block){
 	t.holdbackQueue.Delete(b)
 }
 
-
-func (t *Tree)GetCommitedTransaction(b Block)TransactionList {
+func (t *Tree) GetCommittedTransaction(b Block)TransactionList {
 	var txmap= make(map[string]int)
 	var ret= TransactionList{}
 	for b.PrevBlockID != "-1" {
