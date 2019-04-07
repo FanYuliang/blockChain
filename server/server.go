@@ -187,6 +187,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			os.Exit(6)
 		} else if messageType == "SOLVED" {
 			//received a solved puzzle solution
+			fmt.Println("solved puzzle!")
 			puzzleInput := messageArr[1]
 			puzzleSol := messageArr[2]
 			fmt.Println("puzzleInput: ", puzzleInput)
@@ -196,6 +197,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			s.SendBlock(s.CurrBlock)
 			go s.AskServiceToSolvePuzzle(0 * time.Second)
 		} else if messageType == "VERIFY" {
+			fmt.Println("Verified block!")
 			status := messageArr[1]
 			receivedBlock,_ := s.BlockChain.FindBlockInHoldBackQueueByPuzzle(messageArr[2])
 			if receivedBlock.Term > s.BlockChain.GetTermOfLongestChain() { // block is latest

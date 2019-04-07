@@ -16,8 +16,8 @@ func (s *Server) StartPing(duration time.Duration) {
 		s.ping()
 		s.checkMembershipList()
 		s.MembershipList.ListMutex.Unlock()
-		fmt.Println(s.Name, " Transaction count: ", s.Transactions.Size())
-		fmt.Println(s.Name, " Uncommitted transaction count: ", s.Transactions.UncommittedSize())
+		//fmt.Println(s.Name, " Transaction count: ", s.Transactions.Size())
+		//fmt.Println(s.Name, " Uncommitted transaction count: ", s.Transactions.UncommittedSize())
 	}
 }
 
