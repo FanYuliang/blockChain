@@ -37,7 +37,6 @@ func (t *Tree) GetTermOfLongestChain() int {
 func (t *Tree) InsertBlock(b Block) {
 	t.leaf.Delete(b.PrevBlockID)
 	t.leaf.Set(b.ID, b)
-	t.blockmap.Set(b.ID, b)
 }
 
 func (t *Tree) GetBlockByID(id string) (Block, error) {
@@ -100,6 +99,7 @@ func (t *Tree) RemoveBlockFromQueue(b Block) {
 	t.holdbackQueue.Delete(b)
 }
 
+
 func (t *Tree) GetCommittedTransaction(b Block) *TransactionList {
 	txmap := make(map[string]int)
 	ret := new(TransactionList)
@@ -114,4 +114,13 @@ func (t *Tree) GetCommittedTransaction(b Block) *TransactionList {
 		}
 	}
 	return ret
+}
+
+func (t *Tree)GetBlockByPrevBlockInQueue(id string)(Block,error){
+	for _,elem := range t.holdbackQueue.GetAll(){
+		if id == elem.PrevBlockID{
+			return elem,nil
+		}
+	}
+	return Block{},errors.New("No satisfactory block has this prevId!")
 }

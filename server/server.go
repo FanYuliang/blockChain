@@ -188,6 +188,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			os.Exit(6)
 		} else if messageType == "SOLVED" {
 			//received a solved puzzle solution
+			fmt.Println("solved puzzle!")
 			puzzleInput := messageArr[1]
 			puzzleSol := messageArr[2]
 			fmt.Println("puzzleInput: ", puzzleInput)
@@ -198,19 +199,21 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			s.SendBlock(s.CurrBlock)
 			go s.AskServiceToSolvePuzzle(0 * time.Second)
 		} else if messageType == "VERIFY" {
+			fmt.Println("Verified block!")
 			status := messageArr[1]
 			receivedBlock, _ := s.BlockChain.FindBlockInHoldBackQueueByPuzzle(messageArr[2])
 			if receivedBlock.Term > s.BlockChain.GetTermOfLongestChain() { // block is latest
 				if status == "ok" {
 					prevBlock, err := s.BlockChain.GetBlockFromLeaf(receivedBlock.PrevBlockID)
 					if err != nil { //missing previous block(s), asking for other nodes to resend...
-						s.BlockChain.PushToHoldBackQueue(receivedBlock)
-						s.RequestMissingBlockToNode(receivedBlock.PrevBlockID, s.MyAddress)
-					} else { // find parent of received block in my blockchain
-						if s.checkBlockBalance(prevBlock, receivedBlock) { // check whether final transaction sum is correct
+						//s.BlockChain.PushToHoldBackQueue(receivedBlock)
+						s.RequestMissingBlockToNode(receivedBlock.PrevBlockID,s.MyAddress)
+					}else{ // find parent of received block in my blockchain
+						if (s.checkBlockBalance(prevBlock,receivedBlock)){// check whether final transaction sum is correct
 							s.BlockChain.InsertBlock(receivedBlock)
-							s.updateTransactionCommitStatus(receivedBlock)
-						} else {
+							s.BlockChain.RemoveBlockFromQueue(receivedBlock)
+							s.CommitTransactionInLongestChain(receivedBlock)// set all transactions in longest chain as committed
+						} else{
 							fmt.Println("block has incorrect sum in it")
 						}
 					}
@@ -224,9 +227,11 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 					s.RequestMissingBlockToNode(prevblock.ID, s.MyAddress)
 				} else {
 					s.BlockChain.InsertBlock(receivedBlock)
+					s.AddBlockToChainFromQueue(receivedBlock)
+					longestleaf := s.BlockChain.GetLeafBlockOfLongestChain()
+					s.CommitTransactionInLongestChain(longestleaf)// commit transactions in the longest chain
 				}
 			}
-			s.BlockChain.RemoveBlockFromQueue(receivedBlock)
 		}
 	}
 }
@@ -249,4 +254,26 @@ func (s *Server) sendMessageWithUDP(endpoint endpoints.Endpoint, ipAddress strin
 	s.Bandwidth += float64(int(n) / 1024)
 	s.BandwidthLock.Unlock()
 	utils.CheckError(err)
+}
+
+func (s *Server)CommitTransactionInLongestChain(receivedBlock blockchain.Block){
+	totalTxlist := s.BlockChain.GetCommitedTransaction(receivedBlock)
+	for _,elem := range totalTxlist {
+		if s.Transactions.Has(elem.ID) {
+			s.Transactions.SetTransaction(elem,"committed")
+		}
+	}
+}
+
+func (s *Server)AddBlockToChainFromQueue(receivedBlock blockchain.Block){
+	s.BlockChain.InsertBlock(receivedBlock)
+	for {
+		if b,err := s.BlockChain.GetBlockByPrevBlockInQueue(receivedBlock.ID);err==nil {// found the block, continue put next block into chain
+			s.BlockChain.InsertBlock(b)
+			s.BlockChain.RemoveBlockFromQueue(receivedBlock)
+			receivedBlock = b // recurse forward
+		}else{// can't find next block of the received block; break.
+			break
+		}
+	}
 }
