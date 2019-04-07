@@ -31,11 +31,11 @@ type Server struct {
 	InitialTimeStamp    int64
 	Bandwidth           float64
 	BandwidthLock       sync.Mutex
-	CurrBlock 			blockchain.Block
+	CurrBlock           blockchain.Block
 	Transactions        *blockchain.TransactionList
 	MessageReceive      int
 	ServiceConn         net.Conn
-	BlockChain 			blockchain.Tree
+	BlockChain          blockchain.Tree
 }
 
 func (s *Server) Constructor(name string, introducerIP string, myIP string, serviceConn net.Conn) {
@@ -122,23 +122,22 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 				//fmt.Println("Received new transaction: ", )
 				transactionMeta := endpoint.TEndpoint
 				//fmt.Println(transactionMeta)
- 				s.MergeTransactionList(transactionMeta)
+				s.MergeTransactionList(transactionMeta)
 			} else if endpointType == "Block" {
 				receivedBlock := endpoint.BEndpoint.Block
 				fmt.Println("Received Block: ", receivedBlock)
-				if !s.BlockChain.Has(receivedBlock){ // if has replica, drop the block
+				if !s.BlockChain.Has(receivedBlock) { // if has replica, drop the block
 					s.BlockChain.PushToHoldBackQueue(receivedBlock)
 					s.VerifyBlock(receivedBlock)
 				}
-			}else if endpointType == "HandleMissingTransaction"{
-				if endpoint.REndpoint.Type == 0{// request missing transaction
-					item,err := s.BlockChain.GetBlockByID(endpoint.REndpoint.MissingTransactionID)
-					 if err != nil {// not found, disseminate to other nodes
-					 	 s.ForwardMissingBlockToNode(endpoint.REndpoint.MissingTransactionID,endpoint.REndpoint.RequesterIPaddr)
-					 }else{
-						 s.SendMissingBlockToNode(item,endpoint.REndpoint.RequesterIPaddr)
-					 }
-
+			} else if endpointType == "HandleMissingTransaction" {
+				if endpoint.REndpoint.Type == 0 { // request missing transaction
+					item, err := s.BlockChain.GetBlockByID(endpoint.REndpoint.MissingTransactionID)
+					if err != nil { // not found, disseminate to other nodes
+						s.ForwardMissingBlockToNode(endpoint.REndpoint.MissingTransactionID, endpoint.REndpoint.RequesterIPaddr)
+					} else {
+						s.SendMissingBlockToNode(item, endpoint.REndpoint.RequesterIPaddr)
+					}
 
 				}
 			}
@@ -195,39 +194,35 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			fmt.Println("puzzleSol: ", puzzleSol)
 			s.CurrBlock.Sol = puzzleSol
 			s.BlockChain.InsertBlock(s.CurrBlock)
+			s.updateTransactionCommitStatus(s.CurrBlock)
 			s.SendBlock(s.CurrBlock)
 			go s.AskServiceToSolvePuzzle(0 * time.Second)
 		} else if messageType == "VERIFY" {
 			status := messageArr[1]
-			receivedBlock,_ := s.BlockChain.FindBlockInHoldBackQueueByPuzzle(messageArr[2])
+			receivedBlock, _ := s.BlockChain.FindBlockInHoldBackQueueByPuzzle(messageArr[2])
 			if receivedBlock.Term > s.BlockChain.GetTermOfLongestChain() { // block is latest
 				if status == "ok" {
 					prevBlock, err := s.BlockChain.GetBlockFromLeaf(receivedBlock.PrevBlockID)
 					if err != nil { //missing previous block(s), asking for other nodes to resend...
 						s.BlockChain.PushToHoldBackQueue(receivedBlock)
-						s.RequestMissingBlockToNode(receivedBlock.PrevBlockID,s.MyAddress)
-					}else{ // find parent of received block in my blockchain
-						if (s.checkBlockBalance(prevBlock,receivedBlock)){// check whether final transaction sum is correct
+						s.RequestMissingBlockToNode(receivedBlock.PrevBlockID, s.MyAddress)
+					} else { // find parent of received block in my blockchain
+						if s.checkBlockBalance(prevBlock, receivedBlock) { // check whether final transaction sum is correct
 							s.BlockChain.InsertBlock(receivedBlock)
-/*
-							totalTxlist := s.BlockChain.GetCommittedTransaction(receivedBlock)
-							for i,elem := range totalTxlist {
-								s.Transactions
-							}
-*/
-						} else{
+							s.updateTransactionCommitStatus(receivedBlock)
+						} else {
 							fmt.Println("block has incorrect sum in it")
 						}
 					}
 					go s.AskServiceToSolvePuzzle(0 * time.Second)
-				} else{ // verification failed ; report
+				} else { // verification failed ; report
 					fmt.Println("this block is failed")
 				}
-			}else{ // not latest;
-				prevblock,err := s.BlockChain.GetBlockByID(receivedBlock.PrevBlockID)
-				if err != nil {// not found
-					s.RequestMissingBlockToNode(prevblock.ID,s.MyAddress)
-				}else{
+			} else { // not latest;
+				prevblock, err := s.BlockChain.GetBlockByID(receivedBlock.PrevBlockID)
+				if err != nil { // not found
+					s.RequestMissingBlockToNode(prevblock.ID, s.MyAddress)
+				} else {
 					s.BlockChain.InsertBlock(receivedBlock)
 				}
 			}
@@ -235,7 +230,6 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 		}
 	}
 }
-
 
 func (s *Server) sendMessageWithUDP(endpoint endpoints.Endpoint, ipAddress string) {
 	//fmt.Println("ipAddress: ", ipAddress)
@@ -249,15 +243,10 @@ func (s *Server) sendMessageWithUDP(endpoint endpoints.Endpoint, ipAddress strin
 	utils.CheckError(err)
 	defer Conn.Close()
 
-
 	//fmt.Println("endpoint: ", endpoint)
 	n, err := Conn.Write(endpoint.ToBytes())
 	s.BandwidthLock.Lock()
-	s.Bandwidth += float64(int(n)/1024)
+	s.Bandwidth += float64(int(n) / 1024)
 	s.BandwidthLock.Unlock()
 	utils.CheckError(err)
 }
-
-
-
-

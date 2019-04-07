@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func (s * Server) AskServiceToSolvePuzzle(waitTime time.Duration) {
+func (s *Server) AskServiceToSolvePuzzle(waitTime time.Duration) {
 	time.Sleep(waitTime)
 	fmt.Println("Ask service to solve new puzzle")
 
@@ -17,13 +17,11 @@ func (s * Server) AskServiceToSolvePuzzle(waitTime time.Duration) {
 	s.CurrBlock = blockchain.Block{}
 	transactionToCommit := s.Transactions.GetTransactionToCommit(20)
 	leafBlock := s.BlockChain.GetLeafBlockOfLongestChain()
-	s.CurrBlock.Constructor(leafBlock.ID, leafBlock.Balance, leafBlock.Term + 1)
+	s.CurrBlock.Constructor(leafBlock.ID, leafBlock.Balance, leafBlock.Term+1)
 	for _, tx := range transactionToCommit {
 		ok := s.CurrBlock.AddTransaction(tx)
-		if ok {
-			s.Transactions.SetTransaction(tx, "committed")
-		} else {
-			s.Transactions.SetTransaction(tx, "invalid")
+		if !ok {
+			s.Transactions.Delete(tx.ID)
 		}
 	}
 	fmt.Println("current block: ", s.CurrBlock)
@@ -32,7 +30,7 @@ func (s * Server) AskServiceToSolvePuzzle(waitTime time.Duration) {
 	utils.CheckError(err)
 }
 
-func (s * Server) MergeTransactionList(receivedRequest endpoints.TransactionMeta) {
+func (s *Server) MergeTransactionList(receivedRequest endpoints.TransactionMeta) {
 	for _, tx := range receivedRequest.Tx {
 		if !s.Transactions.Has(tx.ID) {
 			log.Println(tx.ID, time.Now().UnixNano())
@@ -47,7 +45,7 @@ func (s *Server) SendBlock(b blockchain.Block) {
 		targetAddress := s.MembershipList.List[index].IpAddress
 		var endpoint endpoints.Endpoint
 		endpoint.BEndpoint = s.getBlockMeta(b)
-		endpoint.SetEndpointType( "Block")
+		endpoint.SetEndpointType("Block")
 		s.sendMessageWithUDP(endpoint, targetAddress)
 	}
 }
@@ -70,13 +68,12 @@ func (s *Server) SendMissingBlockToNode(b blockchain.Block, ipaddr string) {
 	var endpoint endpoints.Endpoint
 	endpoint.BEndpoint = s.getBlockMeta(b)
 	endpoint.SetEndpointType("Block")
-	s.sendMessageWithUDP(endpoint,ipaddr)
+	s.sendMessageWithUDP(endpoint, ipaddr)
 
 }
 
-func (s* Server) ForwardMissingBlockToNode(missingblockid string, ipaddr string){
+func (s *Server) ForwardMissingBlockToNode(missingblockid string, ipaddr string) {
 	targetIndices := s.getPingTargets()
-	s.getNonFailureMembershipSize()
 	for _, index := range targetIndices {
 
 		if s.MembershipList.List[index].LastUpdatedTime != 0 {
@@ -87,36 +84,47 @@ func (s* Server) ForwardMissingBlockToNode(missingblockid string, ipaddr string)
 		var endpoint endpoints.Endpoint
 		endpoint.REndpoint = s.getRequestMissingBlockMeta(missingblockid)
 		endpoint.REndpoint.Type = 0 // send
-		endpoint.SetEndpointType( "Block")
+		endpoint.SetEndpointType("Block")
 		s.sendMessageWithUDP(endpoint, ipAddress)
 	}
 }
 
-func (s* Server)VerifyBlock(b blockchain.Block){
+func (s *Server) VerifyBlock(b blockchain.Block) {
 	sol := b.Sol
 	hash := b.ID
-	_,err := fmt.Fprintf(s.ServiceConn,utils.Concatenate("VERIFY ",hash," ",sol,"\n"))
+	_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("VERIFY ", hash, " ", sol, "\n"))
 	utils.CheckError(err)
 }
 
-func (s *Server)checkBlockBalance(prevBlock blockchain.Block ,solBlock blockchain.Block)bool{
+func (s *Server) checkBlockBalance(prevBlock blockchain.Block, solBlock blockchain.Block) bool {
 	currBalance := prevBlock.Balance
-	for _,elem := range solBlock.TxList {
+	for _, elem := range solBlock.TxList {
 		amount := elem.Amount
-		if elem.SNum-amount<0 {
+		if elem.SNum-amount < 0 {
 			fmt.Println("invalid transaction!!!")
 			return false
-		}else {
+		} else {
 			currBalance[elem.SNum] -= amount
 			currBalance[elem.DNum] += amount
 		}
 	}
-	for k,_ := range currBalance {
-		if currBalance[k] == currBalance[k]{
+	for k, _ := range currBalance {
+		if currBalance[k] == currBalance[k] {
 			continue
-		}else{
+		} else {
 			return false
 		}
 	}
 	return true
+}
+
+func (s *Server) updateTransactionCommitStatus(leafBlock blockchain.Block) {
+	totalTxlist := s.BlockChain.GetCommittedTransaction(leafBlock)
+	for _, tx := range s.Transactions.GetTransactionList() {
+		if totalTxlist.Has(tx.ID) {
+			s.Transactions.SetTransaction(tx, "committed")
+		} else {
+			s.Transactions.SetTransaction(tx, "uncommitted")
+		}
+	}
 }

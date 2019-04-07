@@ -42,14 +42,14 @@ func (d *TransactionList) Append(v Transaction) {
 	d.TransactionStatus[v.ID] = 0
 }
 
-func (d *TransactionList)findPositionUsingBinarySearch(v Transaction) int {
+func (d *TransactionList) findPositionUsingBinarySearch(v Transaction) int {
 	L := 0
 	R := len(d.items) - 1
 	for {
 		if L > R {
 			break
 		}
-		m := int(math.Floor(float64(L+R)/2.0))
+		m := int(math.Floor(float64(L+R) / 2.0))
 		if d.items[m].Timestamp < v.Timestamp {
 			L = m + 1
 		} else if d.items[m].Timestamp > v.Timestamp {
@@ -77,7 +77,7 @@ func (d *TransactionList) GetTransactionToCommit(n int) []Transaction {
 	return res
 }
 
-func (d *TransactionList) CommitTransactions(tx [] Transaction) {
+func (d *TransactionList) CommitTransactions(tx []Transaction) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	for _, tx := range tx {
@@ -103,7 +103,7 @@ func (d *TransactionList) UncommittedSize() int {
 	return count
 }
 
-func (d *TransactionList) GetTransactSubset(num int) [] Transaction {
+func (d *TransactionList) GetTransactSubset(num int) []Transaction {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 
@@ -124,7 +124,7 @@ func (d *TransactionList) GetTransactSubset(num int) [] Transaction {
 func (d *TransactionList) Has(transactionID string) bool {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
- 	_, ok := d.TransactionStatus[transactionID]
+	_, ok := d.TransactionStatus[transactionID]
 	return ok
 }
 
@@ -142,5 +142,16 @@ func (d *TransactionList) SetTransaction(transaction Transaction, status string)
 		}
 	}
 	return false
+}
 
+func (d *TransactionList) Delete(transactionID string) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	delete(d.TransactionStatus, transactionID)
+}
+
+func (d *TransactionList) GetTransactionList() []Transaction {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+	return d.items
 }

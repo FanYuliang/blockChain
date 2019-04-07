@@ -6,7 +6,7 @@ import (
 )
 
 func (s *Server) getFailureDetectionEndpointMetadata(ActionType string) endpoints.FailureDetectionMeta {
-	num := int(float32(len(s.MembershipList.List))*0.3)
+	num := int(float32(len(s.MembershipList.List)) * 0.3)
 
 	if num < 1 {
 		num = 1
@@ -23,19 +23,17 @@ func (s *Server) getFailureDetectionEndpointMetadata(ActionType string) endpoint
 
 func (s *Server) getTransactionEndpointMetadata() endpoints.TransactionMeta {
 	transactionToSend := s.Transactions.GetTransactionToCommit(20)
-	tEndpoint := endpoints.TransactionMeta{transactionToSend}
+	tEndpoint := endpoints.TransactionMeta{Tx: transactionToSend}
 	//fmt.Println("tEndpoint: ", tEndpoint)
 	return tEndpoint
 }
 
-
-
-func (s* Server) getRequestMissingBlockMeta(id string) endpoints.RequestMissingBlockMeta{
-	missingTransactionMeta := endpoints.RequestMissingBlockMeta{0,id,s.MyAddress}
+func (s *Server) getRequestMissingBlockMeta(id string) endpoints.RequestMissingBlockMeta {
+	missingTransactionMeta := endpoints.RequestMissingBlockMeta{Type: 0, MissingTransactionID: id, RequesterIPaddr: s.MyAddress}
 	return missingTransactionMeta
 }
 
 func (s *Server) getBlockMeta(b blockchain.Block) endpoints.BlockMeta {
-	blockmeta := endpoints.BlockMeta{b}
+	blockmeta := endpoints.BlockMeta{Block: b}
 	return blockmeta
 }

@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-
 func (s *Server) StartPing(duration time.Duration) {
 	for {
 		time.Sleep(duration)
@@ -16,8 +15,8 @@ func (s *Server) StartPing(duration time.Duration) {
 		s.ping()
 		s.checkMembershipList()
 		s.MembershipList.ListMutex.Unlock()
-		fmt.Println(s.Name, " Transaction count: ", s.Transactions.Size())
-		fmt.Println(s.Name, " Uncommitted transaction count: ", s.Transactions.UncommittedSize())
+		//fmt.Println(s.Name, " Transaction count: ", s.Transactions.Size())
+		//fmt.Println(s.Name, " Uncommitted transaction count: ", s.Transactions.UncommittedSize())
 	}
 }
 
@@ -27,7 +26,7 @@ func (s *Server) StartPing(duration time.Duration) {
 func (s *Server) ping() {
 	//fmt.Println("Start to ping...")
 	targetIndices := s.getPingTargets()
-	s.getNonFailureMembershipSize()
+	//s.getNonFailureMembershipSize()
 	//fmt.Println("membership list size: ", len(s.MembershipList.List))
 	//fmt.Println("targetIndices", targetIndices)
 
@@ -52,7 +51,6 @@ func (s *Server) ping() {
 		s.MembershipList.List[index].LastUpdatedTime = time.Now().Unix()
 	}
 
-
 	var names []string
 	for _, v := range s.MembershipList.List {
 		names = append(names, v.Name)
@@ -60,14 +58,12 @@ func (s *Server) ping() {
 	//fmt.Println("server's membership list: ", names)
 }
 
-
-
 func (s *Server) getPingTargets() []int {
 	selfInd := s.findSelfInMembershipList()
-	tempArr := utils.Arange(selfInd, selfInd + int(len(s.MembershipList.List)/2) + 1, 1)
+	tempArr := utils.Arange(selfInd, selfInd+int(len(s.MembershipList.List)/2)+1, 1)
 	var res []int
 	for _, v := range tempArr {
-		curr := v%len(s.MembershipList.List)
+		curr := v % len(s.MembershipList.List)
 		if curr != selfInd {
 			res = append(res, curr)
 		}
@@ -110,7 +106,6 @@ func (s *Server) Quit() {
 		ipAddress := entry.IpAddress
 		s.MembershipList.ListMutex.Unlock()
 
-
 		var endpoint endpoints.Endpoint
 		endpoint.TEndpoint = s.getTransactionEndpointMetadata()
 		endpoint.FEndpoint = s.getFailureDetectionEndpointMetadata("Quit")
@@ -145,11 +140,10 @@ func (s *Server) checkMembershipList() {
 	}
 }
 
-
 func (s *Server) getMemebershipSubset(subsetNum int) []node_membership.Entry {
 	tempArr := utils.Arange(0, len(s.MembershipList.List), 1)
 	shuffledArr := utils.Shuffle(tempArr)
-	var res [] node_membership.Entry
+	var res []node_membership.Entry
 	for i, v := range shuffledArr {
 		if i >= subsetNum {
 			break
@@ -158,7 +152,6 @@ func (s *Server) getMemebershipSubset(subsetNum int) []node_membership.Entry {
 	}
 	return res
 }
-
 
 func (s *Server) findSelfInMembershipList() int {
 	for ind, entry := range s.MembershipList.List {
@@ -170,7 +163,6 @@ func (s *Server) findSelfInMembershipList() int {
 	fmt.Println("Fail to find self in membership list.")
 	return -1
 }
-
 
 func (s *Server) getNonFailureMembershipSize() {
 	size := 0
