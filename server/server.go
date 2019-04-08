@@ -196,11 +196,10 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			s.SendBlock(s.CurrBlock)
 			go s.AskServiceToSolvePuzzle(0 * time.Second)
 		} else if messageType == "VERIFY" {
-			fmt.Println("Verified block!")
+			//fmt.Println("Verified block!")
 			status := messageArr[1]
 			receivedBlock, _ := s.BlockChain.FindBlockInHoldBackQueueByPuzzle(messageArr[2])
 			if receivedBlock.Term > s.BlockChain.GetLeafBlockOfLongestChain().Term { // block is latest
-				fmt.Println("block is latest.")
 				if status == "OK" {
 					prevBlock, err := s.BlockChain.GetBlockFromLeaf(receivedBlock.PrevBlockID)
 					if err != nil { //missing previous block(s), asking for other nodes to resend...
@@ -217,11 +216,12 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 						}
 					}
 					go s.AskServiceToSolvePuzzle(0 * time.Second)
-				} else { // verification failed ; report
+				} else {
+					// verification failed ; report
 					fmt.Println("Verification failure: service server fails to verify.")
 				}
-			} else { // not latest;
-				fmt.Println("block is not latest.")
+			} else {
+				// not latest;
 				prevblock, err := s.BlockChain.GetBlockByID(receivedBlock.PrevBlockID)
 				if err != nil { // not found
 					s.RequestMissingBlockToNode(prevblock.ID, s.MyAddress)
