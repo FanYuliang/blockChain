@@ -128,18 +128,18 @@ func (d *TransactionList) Has(transactionID string) bool {
 	return ok
 }
 
-func (d *TransactionList) SetTransaction(transaction Transaction, status string) bool {
+func (d *TransactionList) SetTransaction(transactionID string, status string) bool {
 	d.lock.Lock()
 	defer d.lock.Unlock()
-	_, ok := d.TransactionStatus[transaction.ID]
-	if ok {
-		if status == "uncommitted" {
-			d.TransactionStatus[transaction.ID] = 0
-		} else if status == "committed" {
-			d.TransactionStatus[transaction.ID] = 1
-		} else if status == "invalid" {
-			d.TransactionStatus[transaction.ID] = 2
-		}
+	if status == "uncommitted" {
+		d.TransactionStatus[transactionID] = 0
+		return true
+	} else if status == "committed" {
+		d.TransactionStatus[transactionID] = 1
+		return true
+	} else if status == "invalid" {
+		d.TransactionStatus[transactionID] = 2
+		return true
 	}
 	return false
 }

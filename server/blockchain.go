@@ -15,7 +15,7 @@ func (s *Server) AskServiceToSolvePuzzle(waitTime time.Duration) {
 
 	//prepare puzzle and current block
 	s.CurrBlock = blockchain.Block{}
-	transactionToCommit := s.Transactions.GetTransactionToCommit(20)
+	transactionToCommit := s.Transactions.GetTransactionToCommit(10)
 	leafBlock := s.BlockChain.GetLeafBlockOfLongestChain()
 	s.CurrBlock.Constructor(leafBlock.ID, leafBlock.Balance, leafBlock.Term+1)
 	for _, tx := range transactionToCommit {
@@ -24,7 +24,7 @@ func (s *Server) AskServiceToSolvePuzzle(waitTime time.Duration) {
 			s.Transactions.Delete(tx.ID)
 		}
 	}
-	fmt.Println("current block: ", s.CurrBlock)
+	//fmt.Println("current block: ", s.CurrBlock)
 	puzzleToSend := s.CurrBlock.GetPuzzle()
 	_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("SOLVE ", puzzleToSend, "\n"))
 	utils.CheckError(err)
@@ -40,7 +40,7 @@ func (s *Server) MergeTransactionList(receivedRequest endpoints.TransactionMeta)
 }
 
 func (s *Server) SendBlock(b blockchain.Block) {
-	fmt.Println("Sending block: ", b)
+	//fmt.Println("Sending block: ", b)
 	for _, index := range s.getPingTargets() {
 		targetAddress := s.MembershipList.List[index].IpAddress
 		var endpoint endpoints.Endpoint
@@ -120,11 +120,13 @@ func (s *Server) checkBlockBalance(prevBlock blockchain.Block, solBlock blockcha
 
 func (s *Server) updateTransactionCommitStatus(leafBlock blockchain.Block) {
 	totalTxlist := s.BlockChain.GetCommittedTransaction(leafBlock)
+	//fmt.Println("totalTxlist: ", totalTxlist)
+	//fmt.Println("s.Transactions.GetTransactionList(): ", s.Transactions.GetTransactionList())
 	for _, tx := range s.Transactions.GetTransactionList() {
 		if totalTxlist.Has(tx.ID) {
-			s.Transactions.SetTransaction(tx, "committed")
+			s.Transactions.SetTransaction(tx.ID, "committed")
 		} else {
-			s.Transactions.SetTransaction(tx, "uncommitted")
+			s.Transactions.SetTransaction(tx.ID, "uncommitted")
 		}
 	}
 }

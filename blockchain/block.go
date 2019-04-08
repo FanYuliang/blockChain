@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"mp2/utils"
 	"time"
@@ -52,4 +53,13 @@ func (b *Block) GetPuzzle() string {
 	currPuzzleHolder.Constructor(b.PrevBlockID, b.TxList)
 	puzzleToSend := utils.GetSHA256(currPuzzleHolder.ToBytes())
 	return puzzleToSend
+}
+
+func (b *Block) PrintContent() {
+	fmt.Println("###############################")
+	fmt.Println("Block ID: ", b.ID)
+	for _, tx := range b.TxList {
+		fmt.Println(tx.ID, tx.Timestamp)
+	}
+	fmt.Println("###############################")
 }

@@ -257,10 +257,10 @@ func (s *Server) sendMessageWithUDP(endpoint endpoints.Endpoint, ipAddress strin
 }
 
 func (s *Server)CommitTransactionInLongestChain(receivedBlock blockchain.Block){
-	totalTxlist := s.BlockChain.GetCommitedTransaction(receivedBlock)
-	for _,elem := range totalTxlist {
+	totalTxlist := s.BlockChain.GetCommittedTransaction(receivedBlock)
+	for _,elem := range totalTxlist.GetTransactionList() {
 		if s.Transactions.Has(elem.ID) {
-			s.Transactions.SetTransaction(elem,"committed")
+			s.Transactions.SetTransaction(elem.ID,"committed")
 		}
 	}
 }
