@@ -50,12 +50,12 @@ func (s *Server) SendBlock(b blockchain.Block) {
 	}
 }
 
-func (s *Server) RequestMissingBlockToNode(id string, myaddr string) {
+func (s *Server) RequestMissingBlockToNode(missingblockid string, myaddr string) {
 	for _, index := range s.getPingTargets() {
 		ipAddress := s.MembershipList.List[index].IpAddress
 
 		var endpoint endpoints.Endpoint
-		endpoint.REndpoint = s.getRequestMissingBlockMeta(id)
+		endpoint.REndpoint = s.getMissingBlockMeta(missingblockid, true)
 		endpoint.REndpoint.Type = 0 // request
 		endpoint.REndpoint.RequesterIPaddr = myaddr
 		endpoint.SetEndpointType("HandleMissingTransaction")
@@ -71,23 +71,22 @@ func (s *Server) SendMissingBlockToNode(b blockchain.Block, ipaddr string) {
 	s.sendMessageWithUDP(endpoint, ipaddr)
 
 }
-
-func (s *Server) ForwardMissingBlockToNode(missingblockid string, ipaddr string) {
-	targetIndices := s.getPingTargets()
-	for _, index := range targetIndices {
-
-		if s.MembershipList.List[index].LastUpdatedTime != 0 {
-			continue
-		}
-		ipAddress := s.MembershipList.List[index].IpAddress
-
-		var endpoint endpoints.Endpoint
-		endpoint.REndpoint = s.getRequestMissingBlockMeta(missingblockid)
-		endpoint.REndpoint.Type = 0 // send
-		endpoint.SetEndpointType("Block")
-		s.sendMessageWithUDP(endpoint, ipAddress)
-	}
-}
+//
+//func (s *Server) ForwardMissingBlockToNode(missingblockid string, ipaddr string) {
+//	targetIndices := s.getPingTargets()
+//	for _, index := range targetIndices {
+//
+//		if s.MembershipList.List[index].LastUpdatedTime != 0 {
+//			continue
+//		}
+//		ipAddress := s.MembershipList.List[index].IpAddress
+//
+//		var endpoint endpoints.Endpoint
+//		endpoint.REndpoint = s.getMissingBlockMeta(missingblockid, true)
+//		endpoint.SetEndpointType("HandleMissingTransaction")
+//		s.sendMessageWithUDP(endpoint, ipAddress)
+//	}
+//}
 
 func (s *Server) VerifyBlock(b blockchain.Block) {
 

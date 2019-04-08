@@ -11,17 +11,8 @@ type Endpoint struct {
 	FEndpoint FailureDetectionMeta
 	TEndpoint TransactionMeta
 	BEndpoint BlockMeta
-	REndpoint RequestMissingBlockMeta
+	REndpoint MissingBlockMeta
 }
-
-
-type RequestMissingBlockMeta struct{
-	Type 					int // 0 request, 1 reply
-	MissingTransactionID 	string
-	RequesterIPaddr 		string
-}
-
-
 
 func (e *Endpoint)  ToBytes() []byte {
 	res, _ := json.Marshal(e)

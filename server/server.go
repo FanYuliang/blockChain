@@ -131,7 +131,10 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 				if endpoint.REndpoint.Type == 0 { // request missing transaction
 					item, err := s.BlockChain.GetBlockByID(endpoint.REndpoint.MissingTransactionID)
 					if err != nil { // not found, disseminate to other nodes
-						s.ForwardMissingBlockToNode(endpoint.REndpoint.MissingTransactionID, endpoint.REndpoint.RequesterIPaddr)
+						for _, index := range s.getPingTargets() {
+							ipAddress := s.MembershipList.List[index].IpAddress
+							s.sendMessageWithUDP(endpoint, ipAddress)
+						}
 					} else {
 						s.SendMissingBlockToNode(item, endpoint.REndpoint.RequesterIPaddr)
 					}
@@ -193,7 +196,10 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			s.CurrBlock.Sol = puzzleSol
 			s.BlockChain.InsertBlock(s.CurrBlock)
 			s.updateTransactionCommitStatus(s.CurrBlock)
-			s.SendBlock(s.CurrBlock)
+			if s.CurrBlock.Term != 1 {
+				s.SendBlock(s.CurrBlock)
+			}
+
 			go s.AskServiceToSolvePuzzle(0 * time.Second)
 		} else if messageType == "VERIFY" {
 			//fmt.Println("Verified block!")
@@ -201,7 +207,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			receivedBlock, _ := s.BlockChain.FindBlockInHoldBackQueueByPuzzle(messageArr[2])
 			if receivedBlock.Term > s.BlockChain.GetLeafBlockOfLongestChain().Term { // block is latest
 				if status == "OK" {
-					prevBlock, err := s.BlockChain.GetBlockFromLeaf(receivedBlock.PrevBlockID)
+					prevBlock, err := s.BlockChain.GetBlockByID(receivedBlock.PrevBlockID)
 					if err != nil { //missing previous block(s), asking for other nodes to resend...
 						//s.BlockChain.PushToHoldBackQueue(receivedBlock)
 						fmt.Println("Verification failure: :", err)
@@ -267,7 +273,7 @@ func (s *Server)CommitTransactionInLongestChain(receivedBlock blockchain.Block){
 func (s *Server)AddBlockToChainFromQueue(receivedBlock blockchain.Block){
 	s.BlockChain.InsertBlock(receivedBlock)
 	for {
-		if b,err := s.BlockChain.GetBlockByPrevBlockInQueue(receivedBlock.ID);err==nil {// found the block, continue put next block into chain
+		if b,err := s.BlockChain.GetBlockByPrevBlockInHoldBackQueue(receivedBlock.ID);err==nil { // found the block, continue put next block into chain
 			s.BlockChain.InsertBlock(b)
 			s.BlockChain.RemoveBlockFromQueue(receivedBlock)
 			receivedBlock = b // recurse forward

@@ -7,7 +7,7 @@ import (
 
 type Tree struct {
 	blockmap      *BlockMap
-	leaf          *BlockMap
+	//leaf          *BlockMap
 	holdbackQueue *BlockList
 }
 
@@ -19,8 +19,8 @@ func (t *Tree) Constructor() {
 	sentinelBlock.ID = "-1"
 	t.blockmap = new(BlockMap)
 	t.blockmap.Set(sentinelBlock.ID, sentinelBlock)
-	t.leaf = new(BlockMap)
-	t.leaf.Set(sentinelBlock.ID, sentinelBlock)
+	//t.leaf = new(BlockMap)
+	//t.leaf.Set(sentinelBlock.ID, sentinelBlock)
 	t.holdbackQueue = new(BlockList)
 }
 
@@ -28,8 +28,8 @@ func (t *Tree) InsertBlock(b Block) {
 	//fmt.Println("Insert a new block: ")
 	//fmt.Println("Previous block id: ", b.PrevBlockID)
 	b.PrintContent()
-	t.leaf.Delete(b.PrevBlockID)
-	t.leaf.Set(b.ID, b)
+	//t.leaf.Delete(b.PrevBlockID)
+	//t.leaf.Set(b.ID, b)
 	t.blockmap.Set(b.ID, b)
 }
 
@@ -40,26 +40,16 @@ func (t *Tree) GetBlockByID(id string) (Block, error) {
 	return Block{}, errors.New("Not found")
 }
 
-func (t *Tree) GetBlockFromLeaf(id string) (Block, error) {
-
-	if t.leaf.Has(id) {
-		return t.leaf.Get(id), nil
-	}
-
-	return Block{}, errors.New("No such block")
-}
-
 func (t *Tree) GetLeafBlockOfLongestChain() Block {
 	maxterm := 0
 	id := ""
-	for _, elem := range t.leaf.GetVals() {
+	for _, elem := range t.blockmap.GetVals() {
 		if elem.Term >= maxterm {
 			maxterm = elem.Term
 			id = elem.ID
 		}
 	}
-	fmt.Println("Leaf:", t.leaf.GetKys())
-	return t.leaf.Get(id)
+	return t.blockmap.Get(id)
 }
 
 func (t *Tree) PushToHoldBackQueue(b Block) {
@@ -114,7 +104,7 @@ func (t *Tree) GetCommittedTransaction(b Block) *TransactionList {
 	return ret
 }
 
-func (t *Tree)GetBlockByPrevBlockInQueue(id string)(Block,error){
+func (t *Tree) GetBlockByPrevBlockInHoldBackQueue(id string)(Block,error){
 	for _,elem := range t.holdbackQueue.GetAll(){
 		if id == elem.PrevBlockID{
 			return elem,nil

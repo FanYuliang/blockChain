@@ -28,8 +28,12 @@ func (s *Server) getTransactionEndpointMetadata() endpoints.TransactionMeta {
 	return tEndpoint
 }
 
-func (s *Server) getRequestMissingBlockMeta(id string) endpoints.RequestMissingBlockMeta {
-	missingTransactionMeta := endpoints.RequestMissingBlockMeta{Type: 0, MissingTransactionID: id, RequesterIPaddr: s.MyAddress}
+func (s *Server) getMissingBlockMeta(id string, forRequest bool) endpoints.MissingBlockMeta {
+	t := 0
+	if !forRequest {
+		t = 1
+	}
+	missingTransactionMeta := endpoints.MissingBlockMeta{Type: t, MissingTransactionID: id, RequesterIPaddr: s.MyAddress}
 	return missingTransactionMeta
 }
 
