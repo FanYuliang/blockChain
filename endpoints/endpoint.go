@@ -2,16 +2,16 @@ package endpoints
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 	"os"
 )
 
 type Endpoint struct {
-	Types     [] int
-	FEndpoint FailureDetectionMeta
-	TEndpoint TransactionMeta
-	BEndpoint BlockMeta
-	REndpoint MissingBlockMeta
+	Types      [] int
+	FEndpoint  FailureDetectionMeta
+	TEndpoint  TransactionMeta
+	BEndpoint  BlockMeta
+	RMEndpoint RequestMissingBlockMeta
 }
 
 func (e *Endpoint)  ToBytes() []byte {
@@ -28,10 +28,10 @@ func (e *Endpoint)SetEndpointType(endpointTypes ...string) {
 			e.Types = append(e.Types, 2)
 		} else if endpointType == "Block" {
 			e.Types = append(e.Types, 3)
-		} else if endpointType == "HandleMissingTransaction"{
+		} else if endpointType == "RequestMissingTransaction"{
 			e.Types = append(e.Types,4)
 		} else {
-			log.Fatal("Bad endpoint type!")
+			fmt.Println("Bad endpoint type!")
 			os.Exit(12)
 		}
 	}

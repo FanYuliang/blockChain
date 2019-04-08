@@ -28,13 +28,9 @@ func (s *Server) getTransactionEndpointMetadata() endpoints.TransactionMeta {
 	return tEndpoint
 }
 
-func (s *Server) getMissingBlockMeta(id string, forRequest bool) endpoints.MissingBlockMeta {
-	t := 0
-	if !forRequest {
-		t = 1
-	}
-	missingTransactionMeta := endpoints.MissingBlockMeta{Type: t, MissingTransactionID: id, RequesterIPaddr: s.MyAddress}
-	return missingTransactionMeta
+func (s *Server) getRequestMissingBlockMeta(missingBlockID string) endpoints.RequestMissingBlockMeta {
+	missingBlockMeta := endpoints.RequestMissingBlockMeta{MissingBlockID: missingBlockID, RequesterIPaddr: s.MyAddress}
+	return missingBlockMeta
 }
 
 func (s *Server) getBlockMeta(b blockchain.Block) endpoints.BlockMeta {

@@ -50,43 +50,24 @@ func (s *Server) SendBlock(b blockchain.Block) {
 	}
 }
 
-func (s *Server) RequestMissingBlockToNode(missingblockid string, myaddr string) {
+func (s *Server) RequestMissingBlock(missingBlockID string, requesterAddr string) {
 	for _, index := range s.getPingTargets() {
 		ipAddress := s.MembershipList.List[index].IpAddress
-
 		var endpoint endpoints.Endpoint
-		endpoint.REndpoint = s.getMissingBlockMeta(missingblockid, true)
-		endpoint.REndpoint.Type = 0 // request
-		endpoint.REndpoint.RequesterIPaddr = myaddr
-		endpoint.SetEndpointType("HandleMissingTransaction")
+		endpoint.RMEndpoint = s.getRequestMissingBlockMeta(missingBlockID)
+		endpoint.RMEndpoint.RequesterIPaddr = requesterAddr
+		endpoint.SetEndpointType("RequestMissingTransaction")
 		s.sendMessageWithUDP(endpoint, ipAddress)
 	}
 }
 
-func (s *Server) SendMissingBlockToNode(b blockchain.Block, ipaddr string) {
-
+func (s *Server) SendMissingBlockToNode(b blockchain.Block, ipAddr string) {
+	fmt.Println("Send Missing Block To Node")
 	var endpoint endpoints.Endpoint
 	endpoint.BEndpoint = s.getBlockMeta(b)
 	endpoint.SetEndpointType("Block")
-	s.sendMessageWithUDP(endpoint, ipaddr)
-
+	s.sendMessageWithUDP(endpoint, ipAddr)
 }
-//
-//func (s *Server) ForwardMissingBlockToNode(missingblockid string, ipaddr string) {
-//	targetIndices := s.getPingTargets()
-//	for _, index := range targetIndices {
-//
-//		if s.MembershipList.List[index].LastUpdatedTime != 0 {
-//			continue
-//		}
-//		ipAddress := s.MembershipList.List[index].IpAddress
-//
-//		var endpoint endpoints.Endpoint
-//		endpoint.REndpoint = s.getMissingBlockMeta(missingblockid, true)
-//		endpoint.SetEndpointType("HandleMissingTransaction")
-//		s.sendMessageWithUDP(endpoint, ipAddress)
-//	}
-//}
 
 func (s *Server) VerifyBlock(b blockchain.Block) {
 
@@ -94,7 +75,7 @@ func (s *Server) VerifyBlock(b blockchain.Block) {
 	utils.CheckError(err)
 }
 
-func (s *Server) checkBlockBalance(prevBlock blockchain.Block, solBlock blockchain.Block) bool {
+func (s *Server) IsBlockBalanceCorrect(prevBlock blockchain.Block, solBlock blockchain.Block) bool {
 	currBalance := prevBlock.Balance
 	for _, elem := range solBlock.TxList {
 		amount := elem.Amount
@@ -125,6 +106,20 @@ func (s *Server) updateTransactionCommitStatus(leafBlock blockchain.Block) {
 			s.Transactions.SetTransaction(tx.ID, "committed")
 		} else {
 			s.Transactions.SetTransaction(tx.ID, "uncommitted")
+		}
+	}
+}
+
+func (s *Server)AddBlockToChainFromQueue(receivedBlock blockchain.Block){
+	s.BlockChain.InsertBlock(receivedBlock)
+	currBlock := receivedBlock
+	for {
+		if b,err := s.BlockChain.GetBlockByPrevBlockInHoldBackQueue(currBlock.ID);err==nil { // found the block, continue put next block into chain
+			s.BlockChain.InsertBlock(b)
+			s.BlockChain.RemoveBlockFromQueue(currBlock)
+			currBlock = b // recurse forward
+		}else{// can't find next block of the received block; break.
+			break
 		}
 	}
 }

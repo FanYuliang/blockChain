@@ -5,7 +5,7 @@
 package blockchain
 
 import (
-	"log"
+	"fmt"
 	"math"
 	"mp2/utils"
 	"os"
@@ -55,7 +55,7 @@ func (d *TransactionList) findPositionUsingBinarySearch(v Transaction) int {
 		} else if d.items[m].Timestamp > v.Timestamp {
 			R = m - 1
 		} else {
-			log.Fatalln("transaction timestamp same, which shouldn't happen...")
+			fmt.Println("transaction timestamp same, which shouldn't happen...")
 			os.Exit(13)
 		}
 	}

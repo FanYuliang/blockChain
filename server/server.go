@@ -123,23 +123,25 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 				s.MergeTransactionList(transactionMeta)
 			} else if endpointType == "Block" {
 				receivedBlock := endpoint.BEndpoint.Block
-				if !s.BlockChain.Has(receivedBlock) { // if has replica, drop the block
+				if !s.BlockChain.Has(receivedBlock) {
+					// if has replica, drop the block
 					s.BlockChain.PushToHoldBackQueue(receivedBlock)
 					s.VerifyBlock(receivedBlock)
+					s.SendBlock(receivedBlock)
 				}
-			} else if endpointType == "HandleMissingTransaction" {
-				if endpoint.REndpoint.Type == 0 { // request missing transaction
-					item, err := s.BlockChain.GetBlockByID(endpoint.REndpoint.MissingTransactionID)
-					if err != nil { // not found, disseminate to other nodes
-						for _, index := range s.getPingTargets() {
-							ipAddress := s.MembershipList.List[index].IpAddress
-							s.sendMessageWithUDP(endpoint, ipAddress)
-						}
-					} else {
-						s.SendMissingBlockToNode(item, endpoint.REndpoint.RequesterIPaddr)
+			} else if endpointType == "RequestMissingTransaction" {
+				fmt.Println("Received RequestMissingTransaction.")
+				fmt.Println("endpoint requester: ", endpoint.RMEndpoint.RequesterIPaddr)
+				item, err := s.BlockChain.GetBlockByID(endpoint.RMEndpoint.MissingBlockID)
+				if err != nil { // not found, disseminate to other nodes
+					for _, index := range s.getPingTargets() {
+						ipAddress := s.MembershipList.List[index].IpAddress
+						s.sendMessageWithUDP(endpoint, ipAddress)
 					}
-
+				} else {
+					s.SendMissingBlockToNode(item, endpoint.RMEndpoint.RequesterIPaddr)
 				}
+
 			}
 		}
 	}
@@ -196,46 +198,44 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			s.CurrBlock.Sol = puzzleSol
 			s.BlockChain.InsertBlock(s.CurrBlock)
 			s.updateTransactionCommitStatus(s.CurrBlock)
-			if s.CurrBlock.Term != 1 {
+			//if s.CurrBlock.Term > 1 {
 				s.SendBlock(s.CurrBlock)
-			}
+			//}
 
 			go s.AskServiceToSolvePuzzle(0 * time.Second)
 		} else if messageType == "VERIFY" {
-			//fmt.Println("Verified block!")
+			fmt.Println("Verified block!")
 			status := messageArr[1]
 			receivedBlock, _ := s.BlockChain.FindBlockInHoldBackQueueByPuzzle(messageArr[2])
 			if receivedBlock.Term > s.BlockChain.GetLeafBlockOfLongestChain().Term { // block is latest
 				if status == "OK" {
 					prevBlock, err := s.BlockChain.GetBlockByID(receivedBlock.PrevBlockID)
-					if err != nil { //missing previous block(s), asking for other nodes to resend...
-						//s.BlockChain.PushToHoldBackQueue(receivedBlock)
-						fmt.Println("Verification failure: :", err)
-						s.RequestMissingBlockToNode(receivedBlock.PrevBlockID,s.MyAddress)
-					}else{ // find parent of received block in my blockchain
-						if (s.checkBlockBalance(prevBlock,receivedBlock)){// check whether final transaction sum is correct
-							s.BlockChain.InsertBlock(receivedBlock)
+					if err != nil {
+						//missing previous block(s), asking for other nodes to resend...
+						fmt.Println("Verification failure: ", err)
+						s.RequestMissingBlock(receivedBlock.PrevBlockID,s.MyAddress)
+					} else {
+						if s.IsBlockBalanceCorrect(prevBlock,receivedBlock) {
+							//success
 							s.BlockChain.RemoveBlockFromQueue(receivedBlock)
-							s.CommitTransactionInLongestChain(receivedBlock)// set all transactions in longest chain as committed
+							s.BlockChain.InsertBlock(receivedBlock)
+							s.updateTransactionCommitStatus(receivedBlock)
+							go s.AskServiceToSolvePuzzle(0 * time.Second)
 						} else{
 							fmt.Println("Verification failure: block has incorrect balance in it")
 						}
 					}
-					go s.AskServiceToSolvePuzzle(0 * time.Second)
 				} else {
 					// verification failed ; report
-					fmt.Println("Verification failure: service server fails to verify.")
+					fmt.Println("Verification failure: service server fails to verify puzzle, ", messageArr[2])
 				}
 			} else {
 				// not latest;
 				prevblock, err := s.BlockChain.GetBlockByID(receivedBlock.PrevBlockID)
 				if err != nil { // not found
-					s.RequestMissingBlockToNode(prevblock.ID, s.MyAddress)
+					s.RequestMissingBlock(prevblock.ID, s.MyAddress)
 				} else {
-					s.BlockChain.InsertBlock(receivedBlock)
 					s.AddBlockToChainFromQueue(receivedBlock)
-					longestleaf := s.BlockChain.GetLeafBlockOfLongestChain()
-					s.CommitTransactionInLongestChain(longestleaf)// commit transactions in the longest chain
 				}
 			}
 		}
@@ -259,26 +259,4 @@ func (s *Server) sendMessageWithUDP(endpoint endpoints.Endpoint, ipAddress strin
 	s.Bandwidth += float64(int(n) / 1024)
 	s.BandwidthLock.Unlock()
 	utils.CheckError(err)
-}
-
-func (s *Server)CommitTransactionInLongestChain(receivedBlock blockchain.Block){
-	totalTxlist := s.BlockChain.GetCommittedTransaction(receivedBlock)
-	for _,elem := range totalTxlist.GetTransactionList() {
-		if s.Transactions.Has(elem.ID) {
-			s.Transactions.SetTransaction(elem.ID,"committed")
-		}
-	}
-}
-
-func (s *Server)AddBlockToChainFromQueue(receivedBlock blockchain.Block){
-	s.BlockChain.InsertBlock(receivedBlock)
-	for {
-		if b,err := s.BlockChain.GetBlockByPrevBlockInHoldBackQueue(receivedBlock.ID);err==nil { // found the block, continue put next block into chain
-			s.BlockChain.InsertBlock(b)
-			s.BlockChain.RemoveBlockFromQueue(receivedBlock)
-			receivedBlock = b // recurse forward
-		}else{// can't find next block of the received block; break.
-			break
-		}
-	}
 }
