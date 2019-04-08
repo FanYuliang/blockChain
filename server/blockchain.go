@@ -12,19 +12,19 @@ import (
 func (s *Server) AskServiceToSolvePuzzle(waitTime time.Duration) {
 	time.Sleep(waitTime)
 	fmt.Println("Ask service to solve new puzzle")
-
 	//prepare puzzle and current block
 	s.CurrBlock = blockchain.Block{}
 	transactionToCommit := s.Transactions.GetTransactionToCommit(10)
 	leafBlock := s.BlockChain.GetLeafBlockOfLongestChain()
 	s.CurrBlock.Constructor(leafBlock.ID, leafBlock.Balance, leafBlock.Term+1)
+
 	for _, tx := range transactionToCommit {
 		ok := s.CurrBlock.AddTransaction(tx)
 		if !ok {
 			s.Transactions.Delete(tx.ID)
 		}
 	}
-	//fmt.Println("current block: ", s.CurrBlock)
+
 	puzzleToSend := s.CurrBlock.GetPuzzle()
 	_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("SOLVE ", puzzleToSend, "\n"))
 	utils.CheckError(err)
@@ -90,9 +90,8 @@ func (s *Server) ForwardMissingBlockToNode(missingblockid string, ipaddr string)
 }
 
 func (s *Server) VerifyBlock(b blockchain.Block) {
-	sol := b.Sol
-	hash := b.ID
-	_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("VERIFY ", hash, " ", sol, "\n"))
+
+	_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("VERIFY ", b.GetPuzzle(), " ", b.Sol, "\n"))
 	utils.CheckError(err)
 }
 
@@ -100,7 +99,7 @@ func (s *Server) checkBlockBalance(prevBlock blockchain.Block, solBlock blockcha
 	currBalance := prevBlock.Balance
 	for _, elem := range solBlock.TxList {
 		amount := elem.Amount
-		if elem.SNum-amount < 0 {
+		if currBalance[elem.SNum] -amount < 0 && elem.SNum != 0{
 			fmt.Println("invalid transaction!!!")
 			return false
 		} else {
@@ -109,7 +108,7 @@ func (s *Server) checkBlockBalance(prevBlock blockchain.Block, solBlock blockcha
 		}
 	}
 	for k, _ := range currBalance {
-		if currBalance[k] == currBalance[k] {
+		if solBlock.Balance[k] == currBalance[k] || k == 0 {
 			continue
 		} else {
 			return false

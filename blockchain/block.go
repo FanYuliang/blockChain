@@ -24,7 +24,9 @@ func (b *Block)  Constructor(prevBlockID string, prevBalance map[int]int, term i
 	b.TxList = make([] Transaction, 0)
 	b.PrevBlockID = prevBlockID
 	b.Balance = make(map[int]int)
-	b.Balance = prevBalance
+	for k,v := range prevBalance {
+		b.Balance [k] = v
+	}
 }
 
 func (b *Block)  ToBytes() []byte {

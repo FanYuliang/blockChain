@@ -92,8 +92,6 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 				resultMap := endpoint.FEndpoint
 				if resultMap.Type == 1 {
 					//received join
-					fmt.Println("Received Join from ", resultMap.IpAddress)
-					fmt.Println(endpoint.GetEndpointTypes())
 					s.MergeList(resultMap)
 					s.Ack(resultMap.IpAddress)
 				} else if resultMap.Type == 2 {
@@ -125,7 +123,6 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 				s.MergeTransactionList(transactionMeta)
 			} else if endpointType == "Block" {
 				receivedBlock := endpoint.BEndpoint.Block
-				fmt.Println("Received Block: ", receivedBlock)
 				if !s.BlockChain.Has(receivedBlock) { // if has replica, drop the block
 					s.BlockChain.PushToHoldBackQueue(receivedBlock)
 					s.VerifyBlock(receivedBlock)
@@ -202,11 +199,13 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			fmt.Println("Verified block!")
 			status := messageArr[1]
 			receivedBlock, _ := s.BlockChain.FindBlockInHoldBackQueueByPuzzle(messageArr[2])
-			if receivedBlock.Term > s.BlockChain.GetTermOfLongestChain() { // block is latest
-				if status == "ok" {
+			if receivedBlock.Term > s.BlockChain.GetLeafBlockOfLongestChain().Term { // block is latest
+				fmt.Println("block is latest.")
+				if status == "OK" {
 					prevBlock, err := s.BlockChain.GetBlockFromLeaf(receivedBlock.PrevBlockID)
 					if err != nil { //missing previous block(s), asking for other nodes to resend...
 						//s.BlockChain.PushToHoldBackQueue(receivedBlock)
+						fmt.Println("Verification failure: :", err)
 						s.RequestMissingBlockToNode(receivedBlock.PrevBlockID,s.MyAddress)
 					}else{ // find parent of received block in my blockchain
 						if (s.checkBlockBalance(prevBlock,receivedBlock)){// check whether final transaction sum is correct
@@ -214,14 +213,15 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 							s.BlockChain.RemoveBlockFromQueue(receivedBlock)
 							s.CommitTransactionInLongestChain(receivedBlock)// set all transactions in longest chain as committed
 						} else{
-							fmt.Println("block has incorrect sum in it")
+							fmt.Println("Verification failure: block has incorrect balance in it")
 						}
 					}
 					go s.AskServiceToSolvePuzzle(0 * time.Second)
 				} else { // verification failed ; report
-					fmt.Println("this block is failed")
+					fmt.Println("Verification failure: service server fails to verify.")
 				}
 			} else { // not latest;
+				fmt.Println("block is not latest.")
 				prevblock, err := s.BlockChain.GetBlockByID(receivedBlock.PrevBlockID)
 				if err != nil { // not found
 					s.RequestMissingBlockToNode(prevblock.ID, s.MyAddress)
@@ -239,7 +239,6 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 func (s *Server) sendMessageWithUDP(endpoint endpoints.Endpoint, ipAddress string) {
 	//fmt.Println("ipAddress: ", ipAddress)
 	arr := strings.Split(ipAddress, ":")
-	fmt.Println(arr)
 	myPort, err := strconv.Atoi(arr[1])
 	utils.CheckError(err)
 

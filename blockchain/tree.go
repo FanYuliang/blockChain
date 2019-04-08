@@ -24,16 +24,6 @@ func (t *Tree) Constructor() {
 	t.holdbackQueue = new(BlockList)
 }
 
-func (t *Tree) GetTermOfLongestChain() int {
-	max := 0
-	for _, elem := range t.leaf.GetVals() {
-		if elem.Term > max {
-			max = elem.Term
-		}
-	}
-	return max
-}
-
 func (t *Tree) InsertBlock(b Block) {
 	fmt.Println("Insert a new block: ")
 	fmt.Println("Previous block id: ", b.PrevBlockID)
