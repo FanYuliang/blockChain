@@ -160,7 +160,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 		message, _ := bufio.NewReader(serviceConn).ReadString('\n')
 		message = strings.TrimSuffix(message, "\n")
 
-		fmt.Print("Message Received:", message, "\n")
+		//fmt.Print("Message Received:", message, "\n")
 
 		messageArr := strings.Split(message, " ")
 		messageType := messageArr[0]

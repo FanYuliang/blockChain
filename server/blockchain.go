@@ -97,8 +97,6 @@ func (s *Server) IsBlockBalanceCorrect(prevBlock blockchain.Block, solBlock bloc
 func (s *Server) updateTransactionCommitStatus() {
 	longestLeaf := s.BlockChain.GetLeafBlockOfLongestChain()
 	totalTxlist := s.BlockChain.GetCommittedTransaction(longestLeaf)
-	//fmt.Println("totalTxlist: ", totalTxlist)
-	//fmt.Println("s.Transactions.GetTransactionList(): ", s.Transactions.GetTransactionList())
 	for _, tx := range s.Transactions.GetTransactionList() {
 		if totalTxlist.Has(tx.ID) {
 			s.Transactions.SetTransaction(tx.ID, "committed")
@@ -114,12 +112,10 @@ func (s *Server) AddBlocksFromHoldBackQueue(){
 		for _, bInQ := range s.BlockChain.GetHoldBackQueue() {
 			fmt.Println("CheckIfBlockCanAddFromHoldBackQueue")
 			if s.CheckIfBlockCanAddFromHoldBackQueue(bInQ) {
-				fmt.Println("117")
 				s.addBlocksFromHoldBackQueue(bInQ)
 				isAnyBlockInQueueAddable = true
 				break
 			}
-			fmt.Println("122")
 		}
 		if !isAnyBlockInQueueAddable {
 			break
@@ -130,11 +126,9 @@ func (s *Server) AddBlocksFromHoldBackQueue(){
 func (s *Server) CheckIfBlockCanAddFromHoldBackQueue(currBlock blockchain.Block) bool {
 	currBlock.PrintContent()
 	if _, err := s.BlockChain.GetBlockByID(currBlock.ID); err == nil {
-		fmt.Println("133")
 		return true
 	} else {
 		if !s.VerifiedBlocks.Has(currBlock.ID){
-			fmt.Println("137")
 			return false
 		}
 
@@ -142,11 +136,9 @@ func (s *Server) CheckIfBlockCanAddFromHoldBackQueue(currBlock blockchain.Block)
 			if s.IsBlockBalanceCorrect(b,currBlock) {
 				return s.CheckIfBlockCanAddFromHoldBackQueue(b)
 			} else {
-				fmt.Println("145")
 				return false
 			}
 		} else {
-			fmt.Println("149")
 			return false
 		}
 	}

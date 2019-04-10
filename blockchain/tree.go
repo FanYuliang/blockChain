@@ -86,6 +86,7 @@ func (t *Tree) RemoveBlockFromQueue(b Block) {
 func (t *Tree) GetCommittedTransaction(b Block) *TransactionList {
 	txmap := make(map[string]int)
 	ret := new(TransactionList)
+	fmt.Println("GetCommittedTransaction ")
 	for {
 		for _, elem := range b.TxList {
 			if _, ok := txmap[elem.ID]; ok {
@@ -98,7 +99,11 @@ func (t *Tree) GetCommittedTransaction(b Block) *TransactionList {
 		if b.PrevBlockID == "-1" {
 			break
 		}
-		b = t.blockmap.Get(b.PrevBlockID)
+		if t.blockmap.Has(b.PrevBlockID) {
+			b = t.blockmap.Get(b.PrevBlockID)
+		} else {
+			break
+		}
 	}
 	return ret
 }
