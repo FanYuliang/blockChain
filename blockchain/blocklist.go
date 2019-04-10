@@ -62,3 +62,14 @@ func (d *BlockList) Delete(b Block) bool{
 	}
 	return false
 }
+
+func (d *BlockList) Has(block Block) bool {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+	for _, b := range d.items {
+		if block.ID == b.ID {
+			return true
+		}
+	}
+	return false
+}

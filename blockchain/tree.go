@@ -6,8 +6,8 @@ import (
 )
 
 type Tree struct {
-	blockmap      				*BlockMap
-	holdbackQueue 				*BlockList
+	blockmap      *BlockMap
+	HoldbackQueue *BlockList
 }
 
 func (t *Tree) Constructor() {
@@ -20,7 +20,7 @@ func (t *Tree) Constructor() {
 	t.blockmap.Set(sentinelBlock.ID, sentinelBlock)
 	//t.leaf = new(BlockMap)
 	//t.leaf.Set(sentinelBlock.ID, sentinelBlock)
-	t.holdbackQueue = new(BlockList)
+	t.HoldbackQueue = new(BlockList)
 }
 
 func (t *Tree) InsertBlock(b Block) {
@@ -52,11 +52,11 @@ func (t *Tree) GetLeafBlockOfLongestChain() Block {
 }
 
 func (t *Tree) PushToHoldBackQueue(b Block) {
-	t.holdbackQueue.Append(b)
+	t.HoldbackQueue.Append(b)
 }
 
 func (t *Tree) FindBlockInHoldBackQueueByPuzzle(puzzle string) (Block, error) {
-	for _, elem := range t.holdbackQueue.GetAll() {
+	for _, elem := range t.HoldbackQueue.GetAll() {
 		if elem.GetPuzzle() == puzzle {
 			return elem, nil
 		}
@@ -65,7 +65,7 @@ func (t *Tree) FindBlockInHoldBackQueueByPuzzle(puzzle string) (Block, error) {
 }
 
 func (t *Tree) Has(b Block) bool {
-	for _, elem := range t.holdbackQueue.GetAll() {
+	for _, elem := range t.HoldbackQueue.GetAll() {
 		if b.ID == elem.ID {
 			return true
 		}
@@ -79,7 +79,7 @@ func (t *Tree) Has(b Block) bool {
 }
 
 func (t *Tree) RemoveBlockFromQueue(b Block) {
-	t.holdbackQueue.Delete(b)
+	t.HoldbackQueue.Delete(b)
 }
 
 
@@ -103,15 +103,25 @@ func (t *Tree) GetCommittedTransaction(b Block) *TransactionList {
 	return ret
 }
 
-func (t *Tree) GetBlockByPrevBlockInHoldBackQueue(id string)(Block,error){
-	for _,elem := range t.holdbackQueue.GetAll(){
-		if id == elem.PrevBlockID{
+//func (t *Tree) GetBlockByPrevBlockInHoldBackQueue(id string)(Block,error){
+//	for _,elem := range t.HoldbackQueue.GetAll(){
+//		if id == elem.PrevBlockID{
+//			return elem,nil
+//		}
+//	}
+//	return Block{},errors.New("No satisfactory block has this prevId!")
+//}
+
+func (t *Tree) GetHoldBackQueue() [] Block {
+	return t.HoldbackQueue.items
+}
+
+func (t *Tree) GetBlockInHoldBackQueueByID(blockID string) (Block,error) {
+	for _,elem := range t.HoldbackQueue.GetAll(){
+		if blockID == elem.ID {
 			return elem,nil
 		}
 	}
 	return Block{},errors.New("No satisfactory block has this prevId!")
 }
 
-func (t *Tree) GetHoldBackQueue() [] Block {
-	return t.holdbackQueue.items
-}

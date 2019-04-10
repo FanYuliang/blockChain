@@ -126,22 +126,20 @@ func (s *Server) AddBlocksFromHoldBackQueue(){
 }
 
 func (s *Server) CheckIfBlockCanAddFromHoldBackQueue(currBlock blockchain.Block) bool {
-	if !s.VerifiedBlocks.Has(currBlock.ID) {
-		s.VerifyBlock(currBlock)
-		return false
-	}
-
 	currBlock.PrintContent()
 	if _, err := s.BlockChain.GetBlockByID(currBlock.ID); err == nil {
 		return true
 	} else {
-		if b,err := s.BlockChain.GetBlockByPrevBlockInHoldBackQueue(currBlock.ID);err==nil { // found the block, continue put next block into chain
+		if !s.VerifiedBlocks.Has(currBlock.ID){
+			return false
+		}
+
+		if b,err := s.BlockChain.GetBlockInHoldBackQueueByID(currBlock.PrevBlockID); err == nil { // found the block, continue put next block into chain
 			if s.IsBlockBalanceCorrect(b,currBlock) {
 				return s.CheckIfBlockCanAddFromHoldBackQueue(b)
 			} else {
 				return false
 			}
-
 		} else {
 			return false
 		}
@@ -149,9 +147,9 @@ func (s *Server) CheckIfBlockCanAddFromHoldBackQueue(currBlock blockchain.Block)
 }
 
 func (s *Server) addBlocksFromHoldBackQueue(currBlock blockchain.Block) {
-	if b,err := s.BlockChain.GetBlockByPrevBlockInHoldBackQueue(currBlock.ID);err==nil { // found the block, continue put next block into chain
-		s.BlockChain.InsertBlock(b)
-		s.BlockChain.RemoveBlockFromQueue(b)
+	if b,err := s.BlockChain.GetBlockInHoldBackQueueByID(currBlock.PrevBlockID); err == nil { // found the block, continue put next block into chain
+		s.BlockChain.InsertBlock(currBlock)
+		s.BlockChain.RemoveBlockFromQueue(currBlock)
 		s.addBlocksFromHoldBackQueue(b)
 	}
 }
