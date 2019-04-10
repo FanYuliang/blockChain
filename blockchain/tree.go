@@ -6,9 +6,8 @@ import (
 )
 
 type Tree struct {
-	blockmap      *BlockMap
-	//leaf          *BlockMap
-	holdbackQueue *BlockList
+	blockmap      				*BlockMap
+	holdbackQueue 				*BlockList
 }
 
 func (t *Tree) Constructor() {
@@ -111,4 +110,8 @@ func (t *Tree) GetBlockByPrevBlockInHoldBackQueue(id string)(Block,error){
 		}
 	}
 	return Block{},errors.New("No satisfactory block has this prevId!")
+}
+
+func (t *Tree) GetHoldBackQueue() [] Block {
+	return t.holdbackQueue.items
 }

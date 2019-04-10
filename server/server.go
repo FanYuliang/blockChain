@@ -36,6 +36,7 @@ type Server struct {
 	MessageReceive      int
 	ServiceConn         net.Conn
 	BlockChain          blockchain.Tree
+	VerifiedBlocks		*blockchain.BlockMap
 }
 
 func (s *Server) Constructor(name string, introducerIP string, myIP string, serviceConn net.Conn) {
@@ -51,6 +52,7 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string, serv
 	s.MembershipList = new(node_membership.Membership)
 	s.ServiceConn = serviceConn
 	s.MyAddress = myIP
+	s.VerifiedBlocks = new(blockchain.BlockMap)
 	s.IntroducerIpAddress = introducerIP
 	s.InitialTimeStamp = currTimeStamp
 	s.TransactionCap = myConfig.TransacCap
@@ -122,6 +124,7 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 				//fmt.Println(transactionMeta)
 				s.MergeTransactionList(transactionMeta)
 			} else if endpointType == "Block" {
+				fmt.Println("received block endpoint")
 				receivedBlock := endpoint.BEndpoint.Block
 				if !s.BlockChain.Has(receivedBlock) {
 					// if has replica, drop the block
@@ -136,7 +139,9 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 				if err != nil { // not found, disseminate to other nodes
 					for _, index := range s.getPingTargets() {
 						ipAddress := s.MembershipList.List[index].IpAddress
-						s.sendMessageWithUDP(endpoint, ipAddress)
+						if ipAddress != endpoint.RMEndpoint.RequesterIPaddr {
+							s.sendMessageWithUDP(endpoint, ipAddress)
+						}
 					}
 				} else {
 					s.SendMissingBlockToNode(item, endpoint.RMEndpoint.RequesterIPaddr)
@@ -197,7 +202,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			fmt.Println("puzzleSol: ", puzzleSol)
 			s.CurrBlock.Sol = puzzleSol
 			s.BlockChain.InsertBlock(s.CurrBlock)
-			s.updateTransactionCommitStatus(s.CurrBlock)
+			s.updateTransactionCommitStatus()
 			//if s.CurrBlock.Term > 1 {
 				s.SendBlock(s.CurrBlock)
 			//}
@@ -207,36 +212,31 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			fmt.Println("Verified block!")
 			status := messageArr[1]
 			receivedBlock, _ := s.BlockChain.FindBlockInHoldBackQueueByPuzzle(messageArr[2])
-			if receivedBlock.Term > s.BlockChain.GetLeafBlockOfLongestChain().Term { // block is latest
-				if status == "OK" {
-					prevBlock, err := s.BlockChain.GetBlockByID(receivedBlock.PrevBlockID)
-					if err != nil {
-						//missing previous block(s), asking for other nodes to resend...
-						fmt.Println("Verification failure: ", err)
-						s.RequestMissingBlock(receivedBlock.PrevBlockID,s.MyAddress)
-					} else {
-						if s.IsBlockBalanceCorrect(prevBlock,receivedBlock) {
-							//success
-							s.BlockChain.RemoveBlockFromQueue(receivedBlock)
-							s.BlockChain.InsertBlock(receivedBlock)
-							s.updateTransactionCommitStatus(receivedBlock)
+			if status == "OK" {
+				s.VerifiedBlocks.Set(receivedBlock.ID, receivedBlock)
+				prevBlock, err := s.BlockChain.GetBlockByID(receivedBlock.PrevBlockID)
+				if err != nil {
+					//missing previous block(s), asking for other nodes to resend...
+					fmt.Println("Verification failure: ", err)
+					s.RequestMissingBlock(receivedBlock.PrevBlockID,s.MyAddress)
+				} else {
+					if s.IsBlockBalanceCorrect(prevBlock,receivedBlock) {
+						//success
+						s.BlockChain.RemoveBlockFromQueue(receivedBlock)
+						s.BlockChain.InsertBlock(receivedBlock)
+						if receivedBlock.Term > s.BlockChain.GetLeafBlockOfLongestChain().Term {
 							go s.AskServiceToSolvePuzzle(0 * time.Second)
-						} else{
-							fmt.Println("Verification failure: block has incorrect balance in it")
 						}
+
+					} else{
+						fmt.Println("Verification failure: block has incorrect balance in it")
 					}
-				} else {
-					// verification failed ; report
-					fmt.Println("Verification failure: service server fails to verify puzzle, ", messageArr[2])
 				}
+				s.AddBlocksFromHoldBackQueue()
+				s.updateTransactionCommitStatus()
 			} else {
-				// not latest;
-				prevblock, err := s.BlockChain.GetBlockByID(receivedBlock.PrevBlockID)
-				if err != nil { // not found
-					s.RequestMissingBlock(prevblock.ID, s.MyAddress)
-				} else {
-					s.AddBlockToChainFromQueue(receivedBlock)
-				}
+				// verification failed ; report
+				fmt.Println("Verification failure: service server fails to verify puzzle, ", messageArr[2])
 			}
 		}
 	}

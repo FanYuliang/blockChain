@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"log"
 	"mp2/blockchain"
 	"mp2/endpoints"
 	"mp2/utils"
@@ -32,10 +31,8 @@ func (s *Server) AskServiceToSolvePuzzle(waitTime time.Duration) {
 
 func (s *Server) MergeTransactionList(receivedRequest endpoints.TransactionMeta) {
 	for _, tx := range receivedRequest.Tx {
-		if !s.Transactions.Has(tx.ID) {
-			log.Println(tx.ID, time.Now().UnixNano())
-			s.Transactions.Append(tx)
-		}
+		//fmt.Println(tx.ID, time.Now().UnixNano())
+		s.Transactions.Append(tx)
 	}
 }
 
@@ -97,8 +94,9 @@ func (s *Server) IsBlockBalanceCorrect(prevBlock blockchain.Block, solBlock bloc
 	return true
 }
 
-func (s *Server) updateTransactionCommitStatus(leafBlock blockchain.Block) {
-	totalTxlist := s.BlockChain.GetCommittedTransaction(leafBlock)
+func (s *Server) updateTransactionCommitStatus() {
+	longestLeaf := s.BlockChain.GetLeafBlockOfLongestChain()
+	totalTxlist := s.BlockChain.GetCommittedTransaction(longestLeaf)
 	//fmt.Println("totalTxlist: ", totalTxlist)
 	//fmt.Println("s.Transactions.GetTransactionList(): ", s.Transactions.GetTransactionList())
 	for _, tx := range s.Transactions.GetTransactionList() {
@@ -110,16 +108,50 @@ func (s *Server) updateTransactionCommitStatus(leafBlock blockchain.Block) {
 	}
 }
 
-func (s *Server)AddBlockToChainFromQueue(receivedBlock blockchain.Block){
-	s.BlockChain.InsertBlock(receivedBlock)
-	currBlock := receivedBlock
+func (s *Server) AddBlocksFromHoldBackQueue(){
 	for {
-		if b,err := s.BlockChain.GetBlockByPrevBlockInHoldBackQueue(currBlock.ID);err==nil { // found the block, continue put next block into chain
-			s.BlockChain.InsertBlock(b)
-			s.BlockChain.RemoveBlockFromQueue(currBlock)
-			currBlock = b // recurse forward
-		}else{// can't find next block of the received block; break.
+		isAnyBlockInQueueAddable := false
+		for _, bInQ := range s.BlockChain.GetHoldBackQueue() {
+			fmt.Println("CheckIfBlockCanAddFromHoldBackQueue")
+			if s.CheckIfBlockCanAddFromHoldBackQueue(bInQ) {
+				s.addBlocksFromHoldBackQueue(bInQ)
+				isAnyBlockInQueueAddable = true
+				break
+			}
+		}
+		if !isAnyBlockInQueueAddable {
 			break
 		}
+	}
+}
+
+func (s *Server) CheckIfBlockCanAddFromHoldBackQueue(currBlock blockchain.Block) bool {
+	if !s.VerifiedBlocks.Has(currBlock.ID) {
+		s.VerifyBlock(currBlock)
+		return false
+	}
+
+	currBlock.PrintContent()
+	if _, err := s.BlockChain.GetBlockByID(currBlock.ID); err == nil {
+		return true
+	} else {
+		if b,err := s.BlockChain.GetBlockByPrevBlockInHoldBackQueue(currBlock.ID);err==nil { // found the block, continue put next block into chain
+			if s.IsBlockBalanceCorrect(b,currBlock) {
+				return s.CheckIfBlockCanAddFromHoldBackQueue(b)
+			} else {
+				return false
+			}
+
+		} else {
+			return false
+		}
+	}
+}
+
+func (s *Server) addBlocksFromHoldBackQueue(currBlock blockchain.Block) {
+	if b,err := s.BlockChain.GetBlockByPrevBlockInHoldBackQueue(currBlock.ID);err==nil { // found the block, continue put next block into chain
+		s.BlockChain.InsertBlock(b)
+		s.BlockChain.RemoveBlockFromQueue(b)
+		s.addBlocksFromHoldBackQueue(b)
 	}
 }

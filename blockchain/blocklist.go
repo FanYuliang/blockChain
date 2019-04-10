@@ -19,7 +19,7 @@ func (d *BlockList) Append(v Block) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	if d.items == nil {
-		d.items = make([]Block, 1)
+		d.items = make([]Block, 0)
 	}
 	d.items = append(d.items, v)
 }
@@ -34,7 +34,7 @@ func (d *BlockList) Pop(n int) []Block {
 		d.items = d.items[n:]
 	} else {
 		res = d.items
-		d.items = make([]Block, 1)
+		d.items = make([]Block, 0)
 	}
 	return res
 }

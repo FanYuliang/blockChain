@@ -5,10 +5,8 @@
 package blockchain
 
 import (
-	"fmt"
 	"math"
 	"mp2/utils"
-	"os"
 	"sync"
 )
 
@@ -17,20 +15,21 @@ import (
 // TransactionList the set of Items
 type TransactionList struct {
 	items             []Transaction
-	TransactionStatus map[string]int // 0: uncommitted, 1: committed, 2: invalid
+	transactionStatus map[string]int // 0: uncommitted, 1: committed, 2: invalid
 	lock              sync.RWMutex
 }
 
 // Set adds a new item to  the list
 func (d *TransactionList) Append(v Transaction) {
-	if d.Has(v.ID) {
-		return
-	}
 	d.lock.Lock()
 	defer d.lock.Unlock()
+	_, ok := d.transactionStatus[v.ID]
+	if ok {
+		return
+	}
 	if d.items == nil {
 		d.items = make([]Transaction, 0)
-		d.TransactionStatus = make(map[string]int)
+		d.transactionStatus = make(map[string]int)
 	}
 	targetIndex := d.findPositionUsingBinarySearch(v)
 
@@ -39,7 +38,7 @@ func (d *TransactionList) Append(v Transaction) {
 	} else {
 		d.items = append(d.items, v)
 	}
-	d.TransactionStatus[v.ID] = 0
+	d.transactionStatus[v.ID] = 0
 }
 
 func (d *TransactionList) findPositionUsingBinarySearch(v Transaction) int {
@@ -55,8 +54,7 @@ func (d *TransactionList) findPositionUsingBinarySearch(v Transaction) int {
 		} else if d.items[m].Timestamp > v.Timestamp {
 			R = m - 1
 		} else {
-			fmt.Println("transaction timestamp same, which shouldn't happen...")
-			os.Exit(13)
+			return m
 		}
 	}
 	return L
@@ -69,7 +67,7 @@ func (d *TransactionList) GetTransactionToCommit(n int) []Transaction {
 	var res []Transaction
 	count := 0
 	for _, tx := range d.items {
-		if count < n && d.TransactionStatus[tx.ID] == 0 {
+		if count < n && d.transactionStatus[tx.ID] == 0 {
 			res = append(res, tx)
 			count += 1
 		}
@@ -81,21 +79,21 @@ func (d *TransactionList) CommitTransactions(tx []Transaction) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	for _, tx := range tx {
-		d.TransactionStatus[tx.ID] = 1
+		d.transactionStatus[tx.ID] = 1
 	}
 }
 
 func (d *TransactionList) Size() int {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
-	return len(d.TransactionStatus)
+	return len(d.transactionStatus)
 }
 
 func (d *TransactionList) UncommittedSize() int {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	count := 0
-	for _, tx := range d.TransactionStatus {
+	for _, tx := range d.transactionStatus {
 		if tx == 0 {
 			count += 1
 		}
@@ -124,7 +122,7 @@ func (d *TransactionList) GetTransactSubset(num int) []Transaction {
 func (d *TransactionList) Has(transactionID string) bool {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
-	_, ok := d.TransactionStatus[transactionID]
+	_, ok := d.transactionStatus[transactionID]
 	return ok
 }
 
@@ -132,13 +130,13 @@ func (d *TransactionList) SetTransaction(transactionID string, status string) bo
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	if status == "uncommitted" {
-		d.TransactionStatus[transactionID] = 0
+		d.transactionStatus[transactionID] = 0
 		return true
 	} else if status == "committed" {
-		d.TransactionStatus[transactionID] = 1
+		d.transactionStatus[transactionID] = 1
 		return true
 	} else if status == "invalid" {
-		d.TransactionStatus[transactionID] = 2
+		d.transactionStatus[transactionID] = 2
 		return true
 	}
 	return false
@@ -147,7 +145,7 @@ func (d *TransactionList) SetTransaction(transactionID string, status string) bo
 func (d *TransactionList) Delete(transactionID string) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
-	delete(d.TransactionStatus, transactionID)
+	delete(d.transactionStatus, transactionID)
 }
 
 func (d *TransactionList) GetTransactionList() []Transaction {
