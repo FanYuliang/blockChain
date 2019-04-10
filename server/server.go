@@ -35,6 +35,7 @@ type Server struct {
 	Transactions        *blockchain.TransactionList
 	MessageReceive      int
 	ServiceConn         net.Conn
+	TransactionNumPerPing int
 	BlockChain          blockchain.Tree
 	VerifiedBlocks		*blockchain.BlockMap
 }
@@ -56,6 +57,7 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string, serv
 	s.IntroducerIpAddress = introducerIP
 	s.InitialTimeStamp = currTimeStamp
 	s.TransactionCap = myConfig.TransacCap
+	s.TransactionNumPerPing = myConfig.TransactionNumPerPing
 	s.tDetection = myConfig.DetectionTimeout
 	s.tSuspect = myConfig.SuspiciousTimeout
 	s.Transactions = new(blockchain.TransactionList)
@@ -158,7 +160,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 		message, _ := bufio.NewReader(serviceConn).ReadString('\n')
 		message = strings.TrimSuffix(message, "\n")
 
-		//fmt.Print("Message Received:", message, "\n")
+		fmt.Print("Message Received:", message, "\n")
 
 		messageArr := strings.Split(message, " ")
 		messageType := messageArr[0]
@@ -203,9 +205,9 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			s.CurrBlock.Sol = puzzleSol
 			s.BlockChain.InsertBlock(s.CurrBlock)
 			s.updateTransactionCommitStatus()
-			//if s.CurrBlock.Term > 1 {
+			if s.CurrBlock.Term > 1 {
 				s.SendBlock(s.CurrBlock)
-			//}
+			}
 
 			go s.AskServiceToSolvePuzzle(0 * time.Second)
 		} else if messageType == "VERIFY" {

@@ -22,7 +22,7 @@ func (s *Server) getFailureDetectionEndpointMetadata(ActionType string) endpoint
 }
 
 func (s *Server) getTransactionEndpointMetadata() endpoints.TransactionMeta {
-	transactionToSend := s.Transactions.GetTransactionToCommit(20)
+	transactionToSend := s.Transactions.GetTransactionToCommit(s.TransactionNumPerPing)
 	tEndpoint := endpoints.TransactionMeta{Tx: transactionToSend}
 	//fmt.Println("tEndpoint: ", tEndpoint)
 	return tEndpoint

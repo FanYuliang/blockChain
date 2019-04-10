@@ -67,7 +67,7 @@ func (s *Server) SendMissingBlockToNode(b blockchain.Block, ipAddr string) {
 }
 
 func (s *Server) VerifyBlock(b blockchain.Block) {
-
+	fmt.Println("to verify block ", b.GetPuzzle())
 	_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("VERIFY ", b.GetPuzzle(), " ", b.Sol, "\n"))
 	utils.CheckError(err)
 }
@@ -114,10 +114,12 @@ func (s *Server) AddBlocksFromHoldBackQueue(){
 		for _, bInQ := range s.BlockChain.GetHoldBackQueue() {
 			fmt.Println("CheckIfBlockCanAddFromHoldBackQueue")
 			if s.CheckIfBlockCanAddFromHoldBackQueue(bInQ) {
+				fmt.Println("117")
 				s.addBlocksFromHoldBackQueue(bInQ)
 				isAnyBlockInQueueAddable = true
 				break
 			}
+			fmt.Println("122")
 		}
 		if !isAnyBlockInQueueAddable {
 			break
@@ -128,9 +130,11 @@ func (s *Server) AddBlocksFromHoldBackQueue(){
 func (s *Server) CheckIfBlockCanAddFromHoldBackQueue(currBlock blockchain.Block) bool {
 	currBlock.PrintContent()
 	if _, err := s.BlockChain.GetBlockByID(currBlock.ID); err == nil {
+		fmt.Println("133")
 		return true
 	} else {
 		if !s.VerifiedBlocks.Has(currBlock.ID){
+			fmt.Println("137")
 			return false
 		}
 
@@ -138,9 +142,11 @@ func (s *Server) CheckIfBlockCanAddFromHoldBackQueue(currBlock blockchain.Block)
 			if s.IsBlockBalanceCorrect(b,currBlock) {
 				return s.CheckIfBlockCanAddFromHoldBackQueue(b)
 			} else {
+				fmt.Println("145")
 				return false
 			}
 		} else {
+			fmt.Println("149")
 			return false
 		}
 	}
