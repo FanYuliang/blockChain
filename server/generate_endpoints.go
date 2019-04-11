@@ -6,12 +6,12 @@ import (
 )
 
 func (s *Server) getFailureDetectionEndpointMetadata(ActionType string) endpoints.FailureDetectionMeta {
-	num := int(float32(len(s.MembershipList.List)) * 0.3)
+	num := int(float32(s.MembershipList.Size()) * 1.0)
 
 	if num < 1 {
 		num = 1
 	}
-	listToSend := s.getMemebershipSubset(num)
+	listToSend := s.MembershipList.GetMemebershipSubset(num)
 
 	var fEndpoint endpoints.FailureDetectionMeta
 	fEndpoint.Type = fEndpoint.EncodeFailureDetectionActionType(ActionType)

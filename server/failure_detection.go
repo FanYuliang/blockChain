@@ -3,18 +3,14 @@ package server
 import (
 	"fmt"
 	"mp2/endpoints"
-	"mp2/node_membership"
-	"mp2/utils"
 	"time"
 )
 
 func (s *Server) StartPing(duration time.Duration) {
 	for {
 		time.Sleep(duration)
-		s.MembershipList.ListMutex.Lock()
 		s.ping()
-		s.checkMembershipList()
-		s.MembershipList.ListMutex.Unlock()
+		s.MembershipList.CheckMembershipList(s.tDetection, s.tSuspect)
 		//fmt.Println(s.Name, " Transaction count: ", s.Transactions.Size())
 		//fmt.Println(s.Name, " Uncommitted transaction count: ", s.Transactions.UncommittedSize())
 	}
@@ -25,9 +21,9 @@ func (s *Server) StartPing(duration time.Duration) {
 */
 func (s *Server) ping() {
 	fmt.Println("Start to ping...")
-	targetIndices := s.getPingTargets()
-	fmt.Println("target indices: ", targetIndices)
-	s.getNonFailureMembershipSize()
+	targetIPs := s.getPingTargets()
+	fmt.Println("target indices: ", targetIPs)
+	s.MembershipList.GetNonFailureMembershipSize()
 	s.MembershipList.PrintContent()
 
 	//blockToSend := blockchain.Block{}
@@ -36,49 +32,43 @@ func (s *Server) ping() {
 	//	s.CurrBlock = blockchain.Block{}
 	//}
 
-	for _, index := range targetIndices {
+	for _, ipAddress := range targetIPs {
 
-		if s.MembershipList.List[index].LastUpdatedTime != 0 {
+		if s.MembershipList.GetEntryByIpAddress(ipAddress).LastUpdatedTime != 0 {
 			continue
 		}
-		ipAddress := s.MembershipList.List[index].IpAddress
-		fmt.Println("Ping ", ipAddress)
+		//fmt.Println("Ping ", ipAddress)
 		var endpoint endpoints.Endpoint
 		endpoint.TEndpoint = s.getTransactionEndpointMetadata()
 		endpoint.FEndpoint = s.getFailureDetectionEndpointMetadata("Ping")
 		endpoint.SetEndpointType("FailureDetection", "Transaction")
 		s.sendMessageWithUDP(endpoint, ipAddress)
-		s.MembershipList.List[index].LastUpdatedTime = time.Now().Unix()
+		s.MembershipList.UpdateLastUpdatedTimeWithIP(ipAddress, time.Now().Unix())
 	}
 
-	var names []string
-	for _, v := range s.MembershipList.List {
-		names = append(names, v.Name)
-	}
-	//fmt.Println("server's membership list: ", names)
 }
 
-func (s *Server)  getPingTargets() []int {
-	selfInd := s.findSelfInMembershipList()
-	var required []int
-	var optional [] int
+func (s *Server)  getPingTargets() []string {
+	currMembershiplist := s.MembershipList.Copy()
+	selfInd := currMembershiplist.FindEntryByIP(s.MyAddress)
+	var required [] string
+	var optional [] string
 	v := selfInd + 1
 	for {
-		curr := v % len(s.MembershipList.List)
+		curr := v % currMembershiplist.Size()
 		if curr != selfInd {
-			if s.MembershipList.List[curr].EntryType == 1 {
-				required = append(required, curr)
-			} else if s.MembershipList.List[curr].EntryType == 0 {
-				optional = append(optional, curr)
+			if currMembershiplist.GetEntryByIndex(curr).EntryType == 1 {
+				required = append(required, currMembershiplist.GetEntryByIndex(curr).IpAddress)
+			} else if currMembershiplist.GetEntryByIndex(curr).EntryType == 0 {
+				optional = append(optional, currMembershiplist.GetEntryByIndex(curr).IpAddress)
 			}
 		} else {
 			break
 		}
 		v += 1
 	}
-
 	for _, v := range optional {
-		if len(required) <= int(len(s.MembershipList.List)/2) + 1 {
+		if len(required) <= int(currMembershiplist.Size()/2) + 1 {
 			required = append(required, v)
 		}
 	}
@@ -115,10 +105,8 @@ func (s *Server) Join(ipAddress string) {
 func (s *Server) Quit() {
 	fmt.Println("Sending Quit request")
 	s.MembershipList.UpdateNode2(s.MyAddress, 2, 0)
-	for _, entry := range s.MembershipList.List {
-		s.MembershipList.ListMutex.Lock()
+	for _, entry := range s.MembershipList.GetAll() {
 		ipAddress := entry.IpAddress
-		s.MembershipList.ListMutex.Unlock()
 
 		var endpoint endpoints.Endpoint
 		endpoint.TEndpoint = s.getTransactionEndpointMetadata()
@@ -132,58 +120,7 @@ func (s *Server) Quit() {
 func (s *Server) MergeList(receivedRequest endpoints.FailureDetectionMeta) {
 	//fmt.Println("Start to merge list...")
 	for _, entry := range receivedRequest.Record {
-		if entry.IpAddress != s.MyAddress {
-			s.MembershipList.UpdateNode(entry)
-		}
+		s.MembershipList.UpdateNode(entry)
 	}
 }
 
-func (s *Server) checkMembershipList() {
-	currTime := time.Now().Unix()
-	//check if any process is MembershipList or failed
-	for i := len(s.MembershipList.List) - 1; i >= 0; i-- {
-		entry := s.MembershipList.List[i]
-		if entry.EntryType == 0 && currTime-entry.LastUpdatedTime >= s.tDetection && entry.LastUpdatedTime != 0 {
-			//alive now but passed detection timeout
-			s.MembershipList.List[i].LastUpdatedTime = 0
-			s.MembershipList.List[i].EntryType = 1
-		} else if entry.EntryType == 1 && currTime-entry.LastUpdatedTime >= s.tSuspect && entry.LastUpdatedTime != 0 {
-			//suspected now but passed suspected timeout
-			s.MembershipList.List[i].EntryType = 2
-		}
-	}
-}
-
-func (s *Server) getMemebershipSubset(subsetNum int) []node_membership.Entry {
-	tempArr := utils.Arange(0, len(s.MembershipList.List), 1)
-	shuffledArr := utils.Shuffle(tempArr)
-	var res []node_membership.Entry
-	for i, v := range shuffledArr {
-		if i >= subsetNum {
-			break
-		}
-		res = append(res, s.MembershipList.List[v])
-	}
-	return res
-}
-
-func (s *Server) findSelfInMembershipList() int {
-	for ind, entry := range s.MembershipList.List {
-		if s.MyAddress == entry.IpAddress {
-			return ind
-		}
-	}
-
-	fmt.Println("Fail to find self in membership list.")
-	return -1
-}
-
-func (s *Server) getNonFailureMembershipSize() {
-	size := 0
-	for _, v := range s.MembershipList.List {
-		if v.EntryType != 2 {
-			size += 1
-		}
-	}
-	fmt.Println("Non failure membership size: ", size)
-}

@@ -38,8 +38,7 @@ func (s *Server) MergeTransactionList(receivedRequest endpoints.TransactionMeta)
 
 func (s *Server) SendBlock(b blockchain.Block) {
 	//fmt.Println("Sending block: ", b)
-	for _, index := range s.getPingTargets() {
-		targetAddress := s.MembershipList.List[index].IpAddress
+	for _, targetAddress := range s.getPingTargets() {
 		var endpoint endpoints.Endpoint
 		endpoint.BEndpoint = s.getBlockMeta(b)
 		endpoint.SetEndpointType("Block")
@@ -48,13 +47,12 @@ func (s *Server) SendBlock(b blockchain.Block) {
 }
 
 func (s *Server) RequestMissingBlock(missingBlockID string, requesterAddr string) {
-	for _, index := range s.getPingTargets() {
-		ipAddress := s.MembershipList.List[index].IpAddress
+	for _, targetAddress := range s.getPingTargets() {
 		var endpoint endpoints.Endpoint
 		endpoint.RMEndpoint = s.getRequestMissingBlockMeta(missingBlockID)
 		endpoint.RMEndpoint.RequesterIPaddr = requesterAddr
 		endpoint.SetEndpointType("RequestMissingTransaction")
-		s.sendMessageWithUDP(endpoint, ipAddress)
+		s.sendMessageWithUDP(endpoint, targetAddress)
 	}
 }
 

@@ -26,7 +26,7 @@ type Server struct {
 	pingNum             int
 	TransactionCap      int
 	IntroducerIpAddress string
-	MembershipList      *node_membership.Membership
+	MembershipList      *node_membership.MembershipList
 	MyAddress           string
 	InitialTimeStamp    int64
 	Bandwidth           float64
@@ -51,7 +51,8 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string, serv
 	utils.CheckError(err)
 
 	currTimeStamp := time.Now().Unix()
-	s.MembershipList = new(node_membership.Membership)
+	s.MembershipList = new(node_membership.MembershipList)
+	s.MembershipList.MyIPAddr = myIP
 	s.ServiceConn = serviceConn
 	s.MyAddress = myIP
 	s.VerifiedBlocks = new(blockchain.BlockMap)
@@ -96,25 +97,22 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 			if endpointType == "FailureDetection" {
 				//Customize different action
 				resultMap := endpoint.FEndpoint
-				fmt.Println("Data received:", resultMap.Record)
+				//fmt.Println("Data received:", resultMap.Record)
+				//s.MembershipList.UpdateNode2(resultMap.IpAddress,0,0)
 				if resultMap.Type == 1 {
 					//received join
+					//fmt.Println("Received Join from ", resultMap.IpAddress)
 					s.MergeList(resultMap)
 					s.Ack(resultMap.IpAddress)
 				} else if resultMap.Type == 2 {
 					//received ping
-					fmt.Println("Received Ping from ", resultMap.IpAddress)
+					//fmt.Println("Received Ping from ", resultMap.IpAddress)
 					s.MergeList(resultMap)
 					s.Ack(resultMap.IpAddress)
 				} else if resultMap.Type == 3 {
 					//received ack
 					//fmt.Println("Received Ack from ", resultMap.IpAddress)
-					for _, entry := range s.MembershipList.List {
-						if entry.InitialTimeStamp == resultMap.InitialTimeStamp && entry.IpAddress == resultMap.IpAddress {
-							s.MembershipList.UpdateNode2(resultMap.IpAddress, 0, 0)
-							break
-						}
-					}
+					s.MembershipList.SetUpdatedTime(resultMap.IpAddress, 0)
 					s.MergeList(resultMap)
 					//log.Println("After merging, server's membership list", myServer.MembershipList.List)
 				} else if resultMap.Type == 4 {
@@ -142,8 +140,7 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 				//fmt.Println("endpoint requester: ", endpoint.RMEndpoint.RequesterIPaddr)
 				item, err := s.BlockChain.GetBlockByID(endpoint.RMEndpoint.MissingBlockID)
 				if err != nil { // not found, disseminate to other nodes
-					for _, index := range s.getPingTargets() {
-						ipAddress := s.MembershipList.List[index].IpAddress
+					for _, ipAddress := range s.getPingTargets() {
 						if ipAddress != endpoint.RMEndpoint.RequesterIPaddr {
 							s.sendMessageWithUDP(endpoint, ipAddress)
 						}
@@ -237,12 +234,14 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 				s.AddBlocksFromHoldBackQueue()
 				s.updateTransactionCommitStatus()
 
+				/*
 				fmt.Println("================")
 				fmt.Println("Current hold hack queue")
 				for _, b := range s.BlockChain.GetHoldBackQueue() {
 					b.PrintContent()
 				}
 				fmt.Println("================")
+				*/
 			} else {
 				// verification failed ; report
 				fmt.Println("Verification failure: service server fails to verify puzzle, ", messageArr[2])

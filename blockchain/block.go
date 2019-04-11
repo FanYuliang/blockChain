@@ -2,7 +2,6 @@ package blockchain
 
 import (
 	"encoding/json"
-	"fmt"
 	"math/rand"
 	"mp2/utils"
 	"time"
@@ -58,6 +57,7 @@ func (b *Block) GetPuzzle() string {
 }
 
 func (b *Block) PrintContent() {
+	/*
 	fmt.Println("###############################")
 	fmt.Println("Block ID: ", b.ID)
 	fmt.Println("Block current term: ", b.Term)
@@ -67,4 +67,5 @@ func (b *Block) PrintContent() {
 		fmt.Println(tx.ID, tx.Timestamp)
 	}
 	fmt.Println("###############################")
+	*/
 }

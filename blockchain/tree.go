@@ -24,9 +24,9 @@ func (t *Tree) Constructor() {
 }
 
 func (t *Tree) InsertBlock(b Block) {
-	fmt.Println("Insert a new block: ")
+	//fmt.Println("Insert a new block: ")
 	//fmt.Println("Previous block id: ", b.PrevBlockID)
-	b.PrintContent()
+	//b.PrintContent()
 	//t.leaf.Delete(b.PrevBlockID)
 	//t.leaf.Set(b.ID, b)
 	t.blockmap.Set(b.ID, b)
