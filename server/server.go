@@ -228,7 +228,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 						s.AddBlocksFromHoldBackQueue()
 						s.updateTransactionCommitStatus()
 						if receivedBlock.Term > s.BlockChain.GetLeafBlockOfLongestChain().Term {
-							go s.AskServiceToSolvePuzzle(0 * time.Second)
+							go s.AskServiceToSolvePuzzle(5 * time.Second)
 						}
 
 					} else{

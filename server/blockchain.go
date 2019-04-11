@@ -13,7 +13,7 @@ func (s *Server) AskServiceToSolvePuzzle(waitTime time.Duration) {
 	fmt.Println("Ask service to solve new puzzle")
 	//prepare puzzle and current block
 	s.CurrBlock = blockchain.Block{}
-	transactionToCommit := s.Transactions.GetTransactionToCommit(10)
+	transactionToCommit := s.Transactions.GetTransactionToCommit(s.TransactionCap)
 	leafBlock := s.BlockChain.GetLeafBlockOfLongestChain()
 	//fmt.Println("leaf block balance: ", leafBlock.Balance)
 	s.CurrBlock.Constructor(leafBlock.ID, leafBlock.Balance, leafBlock.Term+1)
@@ -148,10 +148,12 @@ func (s *Server) CheckIfBlockCanAddFromHoldBackQueue(currBlock blockchain.Block)
 }
 
 func (s *Server) addBlocksFromHoldBackQueue(currBlock blockchain.Block) {
-	s.BlockChain.InsertBlock(currBlock)
-	s.BlockChain.RemoveBlockFromQueue(currBlock)
+
 
 	if b,err := s.BlockChain.GetBlockInHoldBackQueueByID(currBlock.PrevBlockID); err == nil { // found the block, continue put next block into chain
 		s.addBlocksFromHoldBackQueue(b)
 	}
+
+	s.BlockChain.InsertBlock(currBlock)
+	s.BlockChain.RemoveBlockFromQueue(currBlock)
 }
