@@ -76,7 +76,7 @@ func (s *Server) IsBlockBalanceCorrect(prevBlock blockchain.Block, solBlock bloc
 	currBalance := prevBlock.Balance
 	for _, elem := range solBlock.TxList {
 		amount := elem.Amount
-		if currBalance[elem.SNum] -amount < 0 && elem.SNum != 0{
+		if currBalance[elem.SNum] - amount < 0 && elem.SNum != 0{
 			fmt.Println("invalid transaction!!!")
 			return false
 		} else {
@@ -114,6 +114,7 @@ func (s *Server) AddBlocksFromHoldBackQueue(){
 			if s.CheckIfBlockCanAddFromHoldBackQueue(bInQ) {
 				s.addBlocksFromHoldBackQueue(bInQ)
 				isAnyBlockInQueueAddable = true
+				time.Sleep(1*time.Second)
 				break
 			}
 		}
@@ -124,8 +125,8 @@ func (s *Server) AddBlocksFromHoldBackQueue(){
 }
 
 func (s *Server) CheckIfBlockCanAddFromHoldBackQueue(currBlock blockchain.Block) bool {
-	currBlock.PrintContent()
-	if _, err := s.BlockChain.GetBlockByID(currBlock.ID); err == nil {
+	//currBlock.PrintContent()
+	if _, err := s.BlockChain.GetBlockByID(currBlock.PrevBlockID); err == nil {
 		return true
 	} else {
 		if !s.VerifiedBlocks.Has(currBlock.ID){
@@ -145,9 +146,10 @@ func (s *Server) CheckIfBlockCanAddFromHoldBackQueue(currBlock blockchain.Block)
 }
 
 func (s *Server) addBlocksFromHoldBackQueue(currBlock blockchain.Block) {
+	s.BlockChain.InsertBlock(currBlock)
+	s.BlockChain.RemoveBlockFromQueue(currBlock)
+
 	if b,err := s.BlockChain.GetBlockInHoldBackQueueByID(currBlock.PrevBlockID); err == nil { // found the block, continue put next block into chain
-		s.BlockChain.InsertBlock(currBlock)
-		s.BlockChain.RemoveBlockFromQueue(currBlock)
 		s.addBlocksFromHoldBackQueue(b)
 	}
 }

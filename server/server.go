@@ -236,6 +236,13 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 				}
 				s.AddBlocksFromHoldBackQueue()
 				s.updateTransactionCommitStatus()
+
+				fmt.Println("================")
+				fmt.Println("Current hold hack queue")
+				for _, b := range s.BlockChain.GetHoldBackQueue() {
+					b.PrintContent()
+				}
+				fmt.Println("================")
 			} else {
 				// verification failed ; report
 				fmt.Println("Verification failure: service server fails to verify puzzle, ", messageArr[2])

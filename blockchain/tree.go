@@ -24,7 +24,7 @@ func (t *Tree) Constructor() {
 }
 
 func (t *Tree) InsertBlock(b Block) {
-	//fmt.Println("Insert a new block: ")
+	fmt.Println("Insert a new block: ")
 	//fmt.Println("Previous block id: ", b.PrevBlockID)
 	b.PrintContent()
 	//t.leaf.Delete(b.PrevBlockID)
@@ -48,7 +48,11 @@ func (t *Tree) GetLeafBlockOfLongestChain() Block {
 			id = elem.ID
 		}
 	}
-	return t.blockmap.Get(id)
+	fmt.Println("Longest leaf block:")
+
+	res := t.blockmap.Get(id)
+	res.PrintContent()
+	return res
 }
 
 func (t *Tree) PushToHoldBackQueue(b Block) {
@@ -104,7 +108,9 @@ func (t *Tree) GetCommittedTransaction(b Block) *TransactionList {
 		} else {
 			break
 		}
+
 	}
+	fmt.Println("=================== ")
 	return ret
 }
 
