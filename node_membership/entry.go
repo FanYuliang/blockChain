@@ -22,3 +22,14 @@ func (e *Entry) EncodeEntryType(entryType string) int {
 	log.Fatalln("Fail to encode entry type ", entryType)
 	return -1
 }
+
+func (e *Entry) DecodeEntryType() string {
+	if e.EntryType == 0 {
+		return "alive"
+	} else if e.EntryType == 1 {
+		return "suspected"
+	} else if e.EntryType == 2{
+		return "failed"
+	}
+	return ""
+}

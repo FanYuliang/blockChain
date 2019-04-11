@@ -11,6 +11,15 @@ type Membership struct {
 	ListMutex      sync.Mutex
 }
 
+
+func (m *Membership) PrintContent() {
+	fmt.Println("--------------------")
+	fmt.Println("Membership content:")
+	for _, v := range m.List {
+		fmt.Println("Name:", v.Name, ", ip:", v.IpAddress,", type:",v.DecodeEntryType(), ", incarn:",v.Incarnation, ", lastTime:", v.LastUpdatedTime)
+	}
+	fmt.Println("=====================")
+}
 /*
 	@param ipAddress string
 	@param incarnation int

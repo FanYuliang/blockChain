@@ -8,5 +8,5 @@
   "TransacCap": 40,
   "TransactionNumPerPing": 40,
   "PingPeriod": 1,
-  "BlockCapacity": 30
+  "BlockCapacity": 20
 }

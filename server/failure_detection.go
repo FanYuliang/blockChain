@@ -24,11 +24,11 @@ func (s *Server) StartPing(duration time.Duration) {
 	This function should ping to num processes. And at the same time, it should disseminate entries stored in the disseminateList
 */
 func (s *Server) ping() {
-	//fmt.Println("Start to ping...")
+	fmt.Println("Start to ping...")
 	targetIndices := s.getPingTargets()
+	fmt.Println("target indices: ", targetIndices)
 	s.getNonFailureMembershipSize()
-	//fmt.Println("membership list size: ", len(s.MembershipList.List))
-	//fmt.Println("targetIndices", targetIndices)
+	s.MembershipList.PrintContent()
 
 	//blockToSend := blockchain.Block{}
 	//if s.CurrBlock.IsReady {
@@ -42,7 +42,7 @@ func (s *Server) ping() {
 			continue
 		}
 		ipAddress := s.MembershipList.List[index].IpAddress
-
+		fmt.Println("Ping ", ipAddress)
 		var endpoint endpoints.Endpoint
 		endpoint.TEndpoint = s.getTransactionEndpointMetadata()
 		endpoint.FEndpoint = s.getFailureDetectionEndpointMetadata("Ping")
@@ -58,17 +58,31 @@ func (s *Server) ping() {
 	//fmt.Println("server's membership list: ", names)
 }
 
-func (s *Server) getPingTargets() []int {
+func (s *Server)  getPingTargets() []int {
 	selfInd := s.findSelfInMembershipList()
-	tempArr := utils.Arange(selfInd, selfInd+int(len(s.MembershipList.List)/2)+1, 1)
-	var res []int
-	for _, v := range tempArr {
+	var required []int
+	var optional [] int
+	v := selfInd + 1
+	for {
 		curr := v % len(s.MembershipList.List)
 		if curr != selfInd {
-			res = append(res, curr)
+			if s.MembershipList.List[curr].EntryType == 1 {
+				required = append(required, curr)
+			} else if s.MembershipList.List[curr].EntryType == 0 {
+				optional = append(optional, curr)
+			}
+		} else {
+			break
+		}
+		v += 1
+	}
+
+	for _, v := range optional {
+		if len(required) <= int(len(s.MembershipList.List)/2) + 1 {
+			required = append(required, v)
 		}
 	}
-	return res
+	return required
 }
 
 /*

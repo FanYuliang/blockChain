@@ -91,18 +91,19 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 		err := json.Unmarshal(buf[0:n], &endpoint)
 		utils.CheckError(err)
 
-		//log.Println("Data received:", resultMap.Record)
+
 		for _, endpointType := range endpoint.GetEndpointTypes() {
 			if endpointType == "FailureDetection" {
 				//Customize different action
 				resultMap := endpoint.FEndpoint
+				fmt.Println("Data received:", resultMap.Record)
 				if resultMap.Type == 1 {
 					//received join
 					s.MergeList(resultMap)
 					s.Ack(resultMap.IpAddress)
 				} else if resultMap.Type == 2 {
 					//received ping
-					//fmt.Println("Received Ping from ", resultMap.IpAddress)
+					fmt.Println("Received Ping from ", resultMap.IpAddress)
 					s.MergeList(resultMap)
 					s.Ack(resultMap.IpAddress)
 				} else if resultMap.Type == 3 {
