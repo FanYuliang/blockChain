@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"mp2/utils"
 	"time"
+	"fmt"
 )
 
 type Block struct {
@@ -58,15 +59,13 @@ func (b *Block) GetPuzzle() string {
 }
 
 func (b *Block) PrintContent() {
-	/*
-	fmt.Println("###############################")
+
 	fmt.Println("Block ID: ", b.ID)
 	fmt.Println("Block current term: ", b.Term)
-	fmt.Println("Block Prev block ID: ", b.PrevBlockID)
 	fmt.Println("Block current balance: ", b.Balance)
-	for _, tx := range b.TxList {
-		fmt.Println(tx.ID, tx.Timestamp)
-	}
+	fmt.Println("Block Prev block ID: ", b.PrevBlockID)
+	//for _, tx := range b.TxList {
+	//	fmt.Println(tx.ID, tx.Timestamp)
+	//}
 	fmt.Println("###############################")
-	*/
 }

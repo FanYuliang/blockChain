@@ -233,8 +233,8 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 
 					} else{
 						fmt.Println("Verification failure: block has incorrect balance in it")
-						fmt.Println("My Prev Block Balance: ",prevBlock.Balance)
-						fmt.Println("received block balance map",receivedBlock.Balance,"received prevBlock id",receivedBlock.PrevBlockID)
+						//fmt.Println("My Prev Block Balance: ",prevBlock.Balance)
+						//fmt.Println("received block balance map",receivedBlock.Balance,"received prevBlock id",receivedBlock.PrevBlockID)
 						os.Exit(14)
 					}
 				}

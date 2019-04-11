@@ -3,6 +3,7 @@ package blockchain
 import (
 	"errors"
 	"fmt"
+	"os"
 )
 
 type Tree struct {
@@ -24,11 +25,16 @@ func (t *Tree) Constructor() {
 }
 
 func (t *Tree) InsertBlock(b Block) {
-	//fmt.Println("Insert a new block: ")
-	//fmt.Println("Previous block id: ", b.PrevBlockID)
-	//b.PrintContent()
-	//t.leaf.Delete(b.PrevBlockID)
-	//t.leaf.Set(b.ID, b)
+	fmt.Println("------------------------")
+	fmt.Println("Insert a new block: ")
+	fmt.Println("Previous block id: ", b.PrevBlockID)
+	prevBlock,err := t.GetBlockByID(b.PrevBlockID)
+	if err != nil {
+		fmt.Println("Prev block doesn't exist")
+		os.Exit(15)
+	}
+	fmt.Println("Previous block balance: ", prevBlock.Balance)
+	b.PrintContent()
 	t.blockmap.Set(b.ID, b)
 }
 
