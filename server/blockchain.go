@@ -59,7 +59,7 @@ func (s *Server) RequestMissingBlock(missingBlockID string, requesterAddr string
 }
 
 func (s *Server) SendMissingBlockToNode(b blockchain.Block, ipAddr string) {
-	fmt.Println("Send Missing Block To Node")
+	//fmt.Println("Send Missing Block To Node")
 	var endpoint endpoints.Endpoint
 	endpoint.BEndpoint = s.getBlockMeta(b)
 	endpoint.SetEndpointType("Block")
@@ -110,7 +110,6 @@ func (s *Server) AddBlocksFromHoldBackQueue(){
 	for {
 		isAnyBlockInQueueAddable := false
 		for _, bInQ := range s.BlockChain.GetHoldBackQueue() {
-			fmt.Println("CheckIfBlockCanAddFromHoldBackQueue")
 			if s.CheckIfBlockCanAddFromHoldBackQueue(bInQ) {
 				s.addBlocksFromHoldBackQueue(bInQ)
 				isAnyBlockInQueueAddable = true

@@ -9,5 +9,6 @@ type Configuration struct {
 	PingNum				int
 	TransacCap			int
 	TransactionNumPerPing int
+	BlockCapacity 		int
 	PingPeriod 			float64
 }

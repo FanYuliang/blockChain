@@ -36,6 +36,7 @@ type Server struct {
 	MessageReceive      int
 	ServiceConn         net.Conn
 	TransactionNumPerPing int
+	BlockCapacity		int
 	BlockChain          blockchain.Tree
 	VerifiedBlocks		*blockchain.BlockMap
 }
@@ -56,6 +57,7 @@ func (s *Server) Constructor(name string, introducerIP string, myIP string, serv
 	s.VerifiedBlocks = new(blockchain.BlockMap)
 	s.IntroducerIpAddress = introducerIP
 	s.InitialTimeStamp = currTimeStamp
+	s.BlockCapacity = myConfig.BlockCapacity
 	s.TransactionCap = myConfig.TransacCap
 	s.TransactionNumPerPing = myConfig.TransactionNumPerPing
 	s.tDetection = myConfig.DetectionTimeout
@@ -126,7 +128,7 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 				//fmt.Println(transactionMeta)
 				s.MergeTransactionList(transactionMeta)
 			} else if endpointType == "Block" {
-				fmt.Println("received block endpoint")
+				//fmt.Println("received block endpoint")
 				receivedBlock := endpoint.BEndpoint.Block
 				if !s.BlockChain.Has(receivedBlock) {
 					// if has replica, drop the block
@@ -135,8 +137,8 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 					s.SendBlock(receivedBlock)
 				}
 			} else if endpointType == "RequestMissingTransaction" {
-				fmt.Println("Received RequestMissingTransaction.")
-				fmt.Println("endpoint requester: ", endpoint.RMEndpoint.RequesterIPaddr)
+				//fmt.Println("Received RequestMissingTransaction.")
+				//fmt.Println("endpoint requester: ", endpoint.RMEndpoint.RequesterIPaddr)
 				item, err := s.BlockChain.GetBlockByID(endpoint.RMEndpoint.MissingBlockID)
 				if err != nil { // not found, disseminate to other nodes
 					for _, index := range s.getPingTargets() {
@@ -197,7 +199,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			os.Exit(6)
 		} else if messageType == "SOLVED" {
 			//received a solved puzzle solution
-			fmt.Println("solved puzzle!")
+			//fmt.Println("solved puzzle!")
 			puzzleInput := messageArr[1]
 			puzzleSol := messageArr[2]
 			fmt.Println("puzzleInput: ", puzzleInput)
@@ -205,13 +207,13 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			s.CurrBlock.Sol = puzzleSol
 			s.BlockChain.InsertBlock(s.CurrBlock)
 			s.updateTransactionCommitStatus()
-			if s.CurrBlock.Term > 1 {
+			if s.CurrBlock.Term > 5 {
 				s.SendBlock(s.CurrBlock)
 			}
 
 			go s.AskServiceToSolvePuzzle(0 * time.Second)
 		} else if messageType == "VERIFY" {
-			fmt.Println("Verified block!")
+			//fmt.Println("Verified block!")
 			status := messageArr[1]
 			receivedBlock, _ := s.BlockChain.FindBlockInHoldBackQueueByPuzzle(messageArr[2])
 			if status == "OK" {
@@ -237,12 +239,12 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 				s.AddBlocksFromHoldBackQueue()
 				s.updateTransactionCommitStatus()
 
-				fmt.Println("================")
-				fmt.Println("Current hold hack queue")
-				for _, b := range s.BlockChain.GetHoldBackQueue() {
-					b.PrintContent()
-				}
-				fmt.Println("================")
+				//fmt.Println("================")
+				//fmt.Println("Current hold hack queue")
+				//for _, b := range s.BlockChain.GetHoldBackQueue() {
+				//	b.PrintContent()
+				//}
+				//fmt.Println("================")
 			} else {
 				// verification failed ; report
 				fmt.Println("Verification failure: service server fails to verify puzzle, ", messageArr[2])

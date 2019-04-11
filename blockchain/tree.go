@@ -48,10 +48,10 @@ func (t *Tree) GetLeafBlockOfLongestChain() Block {
 			id = elem.ID
 		}
 	}
-	fmt.Println("Longest leaf block:")
+	//fmt.Println("Longest leaf block:")
 
 	res := t.blockmap.Get(id)
-	res.PrintContent()
+	//res.PrintContent()
 	return res
 }
 
@@ -90,7 +90,6 @@ func (t *Tree) RemoveBlockFromQueue(b Block) {
 func (t *Tree) GetCommittedTransaction(b Block) *TransactionList {
 	txmap := make(map[string]int)
 	ret := new(TransactionList)
-	fmt.Println("GetCommittedTransaction ")
 	for {
 		for _, elem := range b.TxList {
 			if _, ok := txmap[elem.ID]; ok {
