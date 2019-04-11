@@ -114,7 +114,6 @@ func (s *Server) AddBlocksFromHoldBackQueue(){
 			if s.CheckIfBlockCanAddFromHoldBackQueue(bInQ) {
 				s.addBlocksFromHoldBackQueue(bInQ)
 				isAnyBlockInQueueAddable = true
-				time.Sleep(1*time.Second)
 				break
 			}
 		}
