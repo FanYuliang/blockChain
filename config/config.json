@@ -7,6 +7,6 @@
   "PingNum": 51,
   "TransacCap": 40,
   "TransactionNumPerPing": 40,
-  "PingPeriod": 0.5,
-  "BlockCapacity": 10
+  "PingPeriod": 1,
+  "BlockCapacity": 30
 }

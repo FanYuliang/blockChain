@@ -207,10 +207,7 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			s.CurrBlock.Sol = puzzleSol
 			s.BlockChain.InsertBlock(s.CurrBlock)
 			s.updateTransactionCommitStatus()
-			if s.CurrBlock.Term > 5 {
-				s.SendBlock(s.CurrBlock)
-			}
-
+			s.SendBlock(s.CurrBlock)
 			go s.AskServiceToSolvePuzzle(0 * time.Second)
 		} else if messageType == "VERIFY" {
 			//fmt.Println("Verified block!")
@@ -239,12 +236,12 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 				s.AddBlocksFromHoldBackQueue()
 				s.updateTransactionCommitStatus()
 
-				//fmt.Println("================")
-				//fmt.Println("Current hold hack queue")
-				//for _, b := range s.BlockChain.GetHoldBackQueue() {
-				//	b.PrintContent()
-				//}
-				//fmt.Println("================")
+				fmt.Println("================")
+				fmt.Println("Current hold hack queue")
+				for _, b := range s.BlockChain.GetHoldBackQueue() {
+					b.PrintContent()
+				}
+				fmt.Println("================")
 			} else {
 				// verification failed ; report
 				fmt.Println("Verification failure: service server fails to verify puzzle, ", messageArr[2])

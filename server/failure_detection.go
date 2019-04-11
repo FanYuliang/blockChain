@@ -26,7 +26,7 @@ func (s *Server) StartPing(duration time.Duration) {
 func (s *Server) ping() {
 	//fmt.Println("Start to ping...")
 	targetIndices := s.getPingTargets()
-	//s.getNonFailureMembershipSize()
+	s.getNonFailureMembershipSize()
 	//fmt.Println("membership list size: ", len(s.MembershipList.List))
 	//fmt.Println("targetIndices", targetIndices)
 
