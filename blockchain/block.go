@@ -14,7 +14,7 @@ type Block struct {
 	Sol				string
 	Balance 		map[int]int
 	Term	  		int
-
+	randonNum		int
 }
 
 func (b *Block)  Constructor(prevBlockID string, prevBalance map[int]int, term int)  {
@@ -23,6 +23,7 @@ func (b *Block)  Constructor(prevBlockID string, prevBalance map[int]int, term i
 	b.TxList = make([] Transaction, 0)
 	b.PrevBlockID = prevBlockID
 	b.Balance = make(map[int]int)
+	b.randonNum = rand.Int()
 	for k,v := range prevBalance {
 		b.Balance [k] = v
 	}
@@ -51,7 +52,7 @@ func (b *Block) AddTransaction(transaction Transaction) bool {
 
 func (b *Block) GetPuzzle() string {
 	currPuzzleHolder := new(Puzzle)
-	currPuzzleHolder.Constructor(b.PrevBlockID, b.TxList)
+	currPuzzleHolder.Constructor(b.PrevBlockID, b.TxList,b.randonNum)
 	puzzleToSend := utils.GetSHA256(currPuzzleHolder.ToBytes())
 	return puzzleToSend
 }

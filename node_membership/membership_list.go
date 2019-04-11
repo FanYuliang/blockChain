@@ -191,7 +191,7 @@ func (m *MembershipList) GetNonFailureMembershipSize() {
 			size += 1
 		}
 	}
-	fmt.Println("Non failure membership size: ", size)
+	//fmt.Println("Non failure membership size: ", size)
 }
 
 func (m *MembershipList) FindEntryByIP(targetIP string) int {

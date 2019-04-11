@@ -202,6 +202,8 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			puzzleSol := messageArr[2]
 			fmt.Println("puzzleInput: ", puzzleInput)
 			fmt.Println("puzzleSol: ", puzzleSol)
+			prevb,_ := s.BlockChain.GetBlockByID(s.CurrBlock.PrevBlockID)
+			fmt.Println("prevBlock id in sender: ",prevb.ID,"currBlock balance :",s.CurrBlock.Balance)
 			s.CurrBlock.Sol = puzzleSol
 			s.BlockChain.InsertBlock(s.CurrBlock)
 			s.updateTransactionCommitStatus()
@@ -223,16 +225,20 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 						//success
 						s.BlockChain.RemoveBlockFromQueue(receivedBlock)
 						s.BlockChain.InsertBlock(receivedBlock)
+						s.AddBlocksFromHoldBackQueue()
+						s.updateTransactionCommitStatus()
 						if receivedBlock.Term > s.BlockChain.GetLeafBlockOfLongestChain().Term {
 							go s.AskServiceToSolvePuzzle(0 * time.Second)
 						}
 
 					} else{
 						fmt.Println("Verification failure: block has incorrect balance in it")
+						fmt.Println("My Prev Block Balance: ",prevBlock.Balance)
+						fmt.Println("received block balance map",receivedBlock.Balance,"received prevBlock id",receivedBlock.PrevBlockID)
+						os.Exit(14)
 					}
 				}
-				s.AddBlocksFromHoldBackQueue()
-				s.updateTransactionCommitStatus()
+
 
 				/*
 				fmt.Println("================")

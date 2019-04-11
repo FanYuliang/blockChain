@@ -20,11 +20,11 @@ func (s *Server) StartPing(duration time.Duration) {
 	This function should ping to num processes. And at the same time, it should disseminate entries stored in the disseminateList
 */
 func (s *Server) ping() {
-	fmt.Println("Start to ping...")
+	//fmt.Println("Start to ping...")
 	targetIPs := s.getPingTargets()
-	fmt.Println("target indices: ", targetIPs)
+	//fmt.Println("target indices: ", targetIPs)
 	s.MembershipList.GetNonFailureMembershipSize()
-	s.MembershipList.PrintContent()
+	//s.MembershipList.PrintContent()
 
 	//blockToSend := blockchain.Block{}
 	//if s.CurrBlock.IsReady {
