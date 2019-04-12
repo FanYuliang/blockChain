@@ -157,3 +157,4 @@ func (s *Server) addBlocksFromHoldBackQueue(currBlock blockchain.Block) {
 	s.BlockChain.InsertBlock(currBlock)
 	s.BlockChain.RemoveBlockFromQueue(currBlock)
 }
+

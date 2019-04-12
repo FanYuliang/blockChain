@@ -99,7 +99,6 @@ func (t *Tree) GetCommittedTransaction(b Block) *TransactionList {
 	for {
 		for _, elem := range b.TxList {
 			if _, ok := txmap[elem.ID]; ok {
-				fmt.Println("repeated transaction!!!", elem.ID)
 			} else {
 				txmap[elem.ID] = 1
 				ret.Append(elem)
@@ -141,3 +140,21 @@ func (t *Tree) GetBlockInHoldBackQueueByID(blockID string) (Block,error) {
 	return Block{},errors.New("No satisfactory block has this prevId!")
 }
 
+
+func (t *Tree) CountSplitInChain()float64{
+	res := make(map[string]int)
+	for _,val := range t.blockmap.GetVals() {
+		res[val.ID] = 0
+	}
+	for _,val:= range t.blockmap.GetVals() {
+		res[val.PrevBlockID] += 1
+	}
+	count := 0
+	for _,val := range res {
+		if val > 1 {
+			count += 1
+		}
+	}
+	fmt.Println("split count = ",count," total block number: ",t.blockmap.Size())
+	return float64(count)/float64(t.blockmap.Size())
+}

@@ -51,7 +51,6 @@ func main() {
 	//startTimestamp := time.Now().Second()
 	fmt.Println(utils.Concatenate("Launching server ", name, " at ", myAddr))
 
-
 	targetConn, err := net.Dial("tcp", serviceAddr)
 	utils.CheckError(err)
 	myAddrArr := strings.Split(myAddr, ":")
@@ -73,6 +72,7 @@ func main() {
 
 		//fmt.Println(utils.Concatenate("Ending server ", name, " at ", myServer.Bandwidth, endTimestamp-startTimestamp))
 		fmt.Println("Received signal from user, about to gracefully terminate the server")
+		fmt.Println("split", myServer.BlockChain.CountSplitInChain())
 		myServer.Quit()
 		//log.Printf(utils.Concatenate("Bandwidth: ", myServer.Bandwidth/float64(endTimestamp-startTimestamp)))
 		log.Println(utils.Concatenate("Message received: ", myServer.MessageReceive))
