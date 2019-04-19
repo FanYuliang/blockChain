@@ -22,9 +22,9 @@ func (s *Server) StartPing(duration time.Duration) {
 func (s *Server) ping() {
 	//fmt.Println("Start to ping...")
 	targetIPs := s.getPingTargets()
-	//fmt.Println("target indices: ", targetIPs)
+	//fmt.Println("target IPs: ", targetIPs)
 	s.MembershipList.GetNonFailureMembershipSize()
-	//s.MembershipList.PrintContent()
+	s.MembershipList.PrintContent()
 
 	//blockToSend := blockchain.Block{}
 	//if s.CurrBlock.IsReady {
@@ -33,11 +33,10 @@ func (s *Server) ping() {
 	//}
 
 	for _, ipAddress := range targetIPs {
-
 		if s.MembershipList.GetEntryByIpAddress(ipAddress).LastUpdatedTime != 0 {
 			continue
 		}
-		//fmt.Println("Ping ", ipAddress)
+		fmt.Println("Ping ", ipAddress)
 		var endpoint endpoints.Endpoint
 		endpoint.TEndpoint = s.getTransactionEndpointMetadata()
 		endpoint.FEndpoint = s.getFailureDetectionEndpointMetadata("Ping")
@@ -45,7 +44,6 @@ func (s *Server) ping() {
 		s.sendMessageWithUDP(endpoint, ipAddress)
 		s.MembershipList.UpdateLastUpdatedTimeWithIP(ipAddress, time.Now().Unix())
 	}
-
 }
 
 func (s *Server)  getPingTargets() []string {

@@ -5,7 +5,7 @@
   "SuspiciousTimeout": 10,
   "FailureTimeout": 2,
   "PingNum": 51,
-  "TransacCap": 20,
+  "TransacCap": 10,
   "TransactionNumPerPing": 40,
   "PingPeriod": 1,
   "BlockCapacity": 20

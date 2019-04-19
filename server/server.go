@@ -86,7 +86,6 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 	for {
 		//wait for incoming response
 		n, _ := ServerConn.Read(buf)
-
 		var endpoint endpoints.Endpoint
 		// parse resultMap to json format
 		err := json.Unmarshal(buf[0:n], &endpoint)
@@ -97,7 +96,7 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 			if endpointType == "FailureDetection" {
 				//Customize different action
 				resultMap := endpoint.FEndpoint
-				//fmt.Println("Data received:", resultMap.Record)
+				fmt.Println("Data received:", resultMap.Record)
 				//s.MembershipList.UpdateNode2(resultMap.IpAddress,0,0)
 				if resultMap.Type == 1 {
 					//received join
@@ -106,7 +105,7 @@ func (s *Server) NodeInterCommunication(ServerConn net.Conn) {
 					s.Ack(resultMap.IpAddress)
 				} else if resultMap.Type == 2 {
 					//received ping
-					//fmt.Println("Received Ping from ", resultMap.IpAddress)
+					fmt.Println("Received Ping from ", resultMap.IpAddress, " to ", s.MyAddress)
 					s.MergeList(resultMap)
 					s.Ack(resultMap.IpAddress)
 				} else if resultMap.Type == 3 {
