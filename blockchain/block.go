@@ -19,12 +19,15 @@ type Block struct {
 }
 
 func (b *Block)  Constructor(prevBlockID string, prevBalance map[int]int, term int)  {
-	b.ID = utils.Concatenate(rand.Intn(1000000), int(time.Now().Unix()))
+	b.ID = utils.Concatenate(int(time.Now().UnixNano()))
 	b.Term = term
 	b.TxList = make([] Transaction, 0)
 	b.PrevBlockID = prevBlockID
 	b.Balance = make(map[int]int)
-	b.randonNum = rand.Int()
+	s1 := rand.NewSource(time.Now().UnixNano())
+	r1 := rand.New(s1)
+	b.randonNum = r1.Intn(1000000)
+	fmt.Println("Changing balance 28")
 	for k,v := range prevBalance {
 		b.Balance [k] = v
 	}
@@ -37,6 +40,7 @@ func (b *Block)  ToBytes() []byte {
 
 func (b *Block) AddTransaction(transaction Transaction) bool {
 	//not support for concurrency
+	fmt.Println("changing balance")
 	sourceBalance, ok1 := b.Balance[transaction.SNum]
 	_, ok2 := b.Balance[transaction.DNum]
 	if ok1 && (sourceBalance >= transaction.Amount || transaction.SNum == 0) {

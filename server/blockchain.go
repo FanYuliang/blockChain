@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func (s *Server) AskServiceToSolvePuzzle(waitTime time.Duration) {
+func (s *Server) AskServiceToSolvePuzzle() {
 	//time.Sleep(waitTime)
 	fmt.Println("Ask service to solve new puzzle")
 	//prepare puzzle and current block
@@ -21,7 +21,6 @@ func (s *Server) AskServiceToSolvePuzzle(waitTime time.Duration) {
 		}
 		time.Sleep(1000*time.Microsecond)
 	}
-	fmt.Println(transactionToCommit)
 	leafBlock := s.BlockChain.GetLeafBlockOfLongestChain()
 	//fmt.Println("leaf block balance: ", leafBlock.Balance)
 	s.CurrBlock.Constructor(leafBlock.ID, leafBlock.Balance, leafBlock.Term+1)
@@ -32,7 +31,7 @@ func (s *Server) AskServiceToSolvePuzzle(waitTime time.Duration) {
 			s.Transactions.Delete(tx.ID)
 		}
 	}
-
+	s.CurrBlock.PrintContent()
 	puzzleToSend := s.CurrBlock.GetPuzzle()
 	_, err := fmt.Fprintf(s.ServiceConn, utils.Concatenate("SOLVE ", puzzleToSend, "\n"))
 	//fmt.Println("leaf block balance after: ", leafBlock.Balance)
@@ -81,6 +80,7 @@ func (s *Server) VerifyBlock(b blockchain.Block) {
 }
 
 func (s *Server) IsBlockBalanceCorrect(prevBlock blockchain.Block, solBlock blockchain.Block) bool {
+	fmt.Println("changing balance 83")
 	currBalance := make(map[int] int)
 	for k, v := range prevBlock.Balance {
 		currBalance[k] = v

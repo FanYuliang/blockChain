@@ -206,9 +206,10 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 			fmt.Println("prevBlock id in sender: ",prevb.ID,"currBlock balance :",s.CurrBlock.Balance)
 			s.CurrBlock.Sol = puzzleSol
 			s.BlockChain.InsertBlock(s.CurrBlock)
+			s.CurrBlock.PrintContent()
 			s.updateTransactionCommitStatus()
 			s.SendBlock(s.CurrBlock)
-			go s.AskServiceToSolvePuzzle(0 * time.Second)
+			go s.AskServiceToSolvePuzzle()
 		} else if messageType == "VERIFY" {
 			//fmt.Println("Verified block!")
 			status := messageArr[1]
@@ -228,14 +229,14 @@ func (s *Server) ServiceServerCommunication(serviceConn net.Conn) {
 						s.AddBlocksFromHoldBackQueue()
 						s.updateTransactionCommitStatus()
 						if receivedBlock.Term > s.BlockChain.GetLeafBlockOfLongestChain().Term {
-							go s.AskServiceToSolvePuzzle(5 * time.Second)
+							go s.AskServiceToSolvePuzzle()
 						}
 
 					} else{
 						fmt.Println("Verification failure: block has incorrect balance in it")
-						//fmt.Println("My Prev Block Balance: ",prevBlock.Balance)
-						//fmt.Println("received block balance map",receivedBlock.Balance,"received prevBlock id",receivedBlock.PrevBlockID)
-						//os.Exit(14)
+						fmt.Println("Received Prev Block Balance: ",prevBlock.Balance, "received prevBlock id",receivedBlock.PrevBlockID)
+						fmt.Println("received block balance: ",receivedBlock.Balance,"received block id",receivedBlock.ID)
+						os.Exit(14)
 					}
 				}
 

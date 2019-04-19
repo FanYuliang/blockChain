@@ -81,7 +81,7 @@ func main() {
 
 	go myServer.ServiceServerCommunication(targetConn)
 	go myServer.StartPing(time.Duration(myConfig.PingPeriod) * time.Second)
-	go myServer.AskServiceToSolvePuzzle(10 * time.Second)
+	go myServer.AskServiceToSolvePuzzle()
 
 	myServer.NodeInterCommunication(ServerConn)
 }
