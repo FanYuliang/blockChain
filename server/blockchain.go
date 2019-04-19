@@ -9,11 +9,19 @@ import (
 )
 
 func (s *Server) AskServiceToSolvePuzzle(waitTime time.Duration) {
-	time.Sleep(waitTime)
+	//time.Sleep(waitTime)
 	fmt.Println("Ask service to solve new puzzle")
 	//prepare puzzle and current block
 	s.CurrBlock = blockchain.Block{}
-	transactionToCommit := s.Transactions.GetTransactionToCommit(s.TransactionCap)
+	var transactionToCommit []blockchain.Transaction
+	for {
+		transactionToCommit = s.Transactions.GetTransactionToCommit(s.TransactionCap)
+		if len(transactionToCommit) >= s.TransactionCap {
+			break
+		}
+		time.Sleep(1000*time.Microsecond)
+	}
+	fmt.Println(transactionToCommit)
 	leafBlock := s.BlockChain.GetLeafBlockOfLongestChain()
 	//fmt.Println("leaf block balance: ", leafBlock.Balance)
 	s.CurrBlock.Constructor(leafBlock.ID, leafBlock.Balance, leafBlock.Term+1)
